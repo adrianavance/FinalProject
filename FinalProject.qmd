@@ -7,4 +7,44 @@ editor: visual
 
 #### Loading datasets
 ```{r echo = false}
+library(httr)
+library(jsonlite)
+library(tidyverse)
+library(tidycensus)
 
+#Read in CSV of CDC data
+Health <- read_csv("PLACES.csv")
+
+# Look at types of health outcome measures
+Measures <- Health %>%
+  group_by(Measure) %>%
+  summarize(n = n())
+
+MeasureIDs <- Health %>%
+  group_by(MeasureId) %>%
+  summarize(n = n())
+
+# We want to look for current rates of asthma, heart disease, diabetes, stroke, and depression
+Health <- Health %>%
+  filter(
+    MeasureId == "CASTHMA" |
+      MeasureId == "CHD" |
+      MeasureId == "DIABETES" |
+      MeasureId == "STROKE" |
+      MeasureId == "DEPRESSION")
+
+ACSData <- load_variables(2021, "acs5") #browse to find variables
+      
+# Loading ACS Data (not working right now)
+my_states <- c("DC", "VA", "MD")
+my_counties <- c("51059", "24031", "24033")
+
+AffordableACS <- get_acs(geography = "tract",
+                     variables = c(
+                       affordability = "B25071_001E"),
+                     state = my_states, 
+                     county = my_counties, 
+                     output = "wide"
+) # retrieving ACS data
+
+```
