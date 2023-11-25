@@ -11,6 +11,7 @@ library(httr)
 library(jsonlite)
 library(tidyverse)
 library(tidycensus)
+library(purrr)
 
 #Read in CSV of CDC data
 Health <- read_csv("PLACES.csv")
@@ -36,15 +37,40 @@ Health <- Health %>%
 ACSData <- load_variables(2021, "acs5") #browse to find variables
       
 # Loading ACS Data (not working right now)
-my_states <- c("DC", "VA", "MD")
-my_counties <- c("51059", "24031", "24033")
+my_vars <- c(median_cost_ratio = "B25071_001E")
 
-AffordableACS <- get_acs(geography = "tract",
-                     variables = c(
-                       affordability = "B25071_001E"),
-                     state = my_states, 
-                     county = my_counties, 
-                     output = "wide"
-) # retrieving ACS data
+
+DC <- get_acs(geography = "tract",
+                     variables = my_vars,
+                     state = "DC", 
+                     output = "wide",
+                     survey = "acs5",
+                     year = 2021,
+                     geometry = TRUE)
+
+MD <- get_acs(geography = "tract",
+                     variables = my_vars,
+                     state = "MD",
+                     county = c("Montgomery", "Prince George's"),
+                     output = "wide",
+                     survey = "acs5",
+                     year = 2021,
+                     geometry = TRUE)
+
+VA <- get_acs(geography = "tract",
+                     variables = my_vars,
+                     state = "VA",
+                     county = "Fairfax County",
+                     output = "wide",
+                     survey = "acs5",
+                     year = 2021,
+                     geometry = TRUE)
+
+All_states <- bind_rows(DC, MD, VA)
+
+Health %>%
+  group_by(Year) %>%
+  summarize(n = n())
+
 
 ```
