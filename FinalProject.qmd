@@ -5,7 +5,8 @@ format: html
 editor: visual
 ---
 
-#### Loading datasets
+#### Loading Data Sets
+
 ```{r echo = false}
 library(httr)
 library(jsonlite)
