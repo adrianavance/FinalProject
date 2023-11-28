@@ -80,6 +80,7 @@ Health_map <- Health_filter %>%
   st_as_sf(wkt = "Geolocation", remove = FALSE) %>%
   st_set_crs(value = 4326) # setting CRS
 
+# Map health outcomes
 Health_map %>%
   ggplot() +
   geom_sf(aes(color = MeasureId))
