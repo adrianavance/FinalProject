@@ -12,6 +12,7 @@ library(jsonlite)
 library(tidyverse)
 library(tidycensus)
 library(purrr)
+library(sf)
 
 #Read in CSV of CDC data
 Health <- read_csv("PLACES.csv")
@@ -68,9 +69,19 @@ VA <- get_acs(geography = "tract",
 
 All_states <- bind_rows(DC, MD, VA)
 
-Health %>%
-  group_by(Year) %>%
-  summarize(n = n())
 
+```
+
+#### Playing around w mapping
+```{r}
+# Change geometry to be readable by SF
+
+Health_map <- Health_filter %>%
+  st_as_sf(wkt = "Geolocation", remove = FALSE) %>%
+  st_set_crs(value = 4326) # setting CRS
+
+Health_map %>%
+  ggplot() +
+  geom_sf(aes(color = MeasureId))
 
 ```
