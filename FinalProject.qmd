@@ -74,6 +74,7 @@ All_states <- bind_rows(DC, MD, VA)
 ```
 
 #### Playing around w mapping
+
 ```{r}
 # Change geometry to be readable by SF
 
@@ -87,3 +88,13 @@ Health_map %>%
   geom_sf(aes(color = MeasureId))
 
 ```
+## loading in Capital Flows Dataset 
+```{r}
+library(readxl)
+capital_flows <- read_excel("capital_flows.xlsx", 3) %>%
+  filter(in_DMV == "TRUE")
+view(capital_flows)
+```
+
+
+
