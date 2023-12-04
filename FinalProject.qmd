@@ -110,6 +110,28 @@ view(medical_debt)
 medical_debt<- medical_debt %>%
   filter(State_Name == c("Maryland", "Virginia, District of Columbia"))
 
+```
+
+```{r}
+library(tigris) 
+
+Maryland_tracts <- tracts(
+state = "MD",
+county = "Montgomery",
+cb = FALSE,
+resolution = "500k",
+year = NULL)
+
+Virginia_tracts <- tracts(
+  state = "VA",
+  county = "Montgomery",
+  resolution = "500k"
+)
+
+DC_tracts <- tracts(
+  state = "DC",
+  resolution = "500k"
+)
 
 ```
 
