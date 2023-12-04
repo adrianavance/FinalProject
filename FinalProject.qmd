@@ -96,5 +96,12 @@ capital_flows <- read_excel("capital_flows.xlsx", 3) %>%
 view(capital_flows)
 ```
 
+## loading in Medical Debt Dataset
+```{r}
+medical_debt <- read_excel("medical_debt.xlsx") 
+
+# need to filter to Maryalnd, Virginia, and DC but the column names have spaces 
+view(medical_debt)
+```
 
 
