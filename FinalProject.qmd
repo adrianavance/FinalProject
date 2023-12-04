@@ -133,6 +133,10 @@ DC_tracts <- tracts(
   resolution = "500k"
 )
 
+DMV_tracts<- rbind_tigris(DC_tracts, Virginia_tracts, Maryland_tracts)
+
 ```
 
+```{r}
 
+```
