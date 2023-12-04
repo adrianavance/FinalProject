@@ -98,10 +98,18 @@ view(capital_flows)
 
 ## loading in Medical Debt Dataset
 ```{r}
+#reading in data 
 medical_debt <- read_excel("medical_debt.xlsx") 
 
-# need to filter to Maryalnd, Virginia, and DC but the column names have spaces 
+#removing spaces from column names 
+names(medical_debt) <- gsub(" ", "_", names(medical_debt))
 view(medical_debt)
+
+#filter to DMV
+medical_debt<- medical_debt %>%
+  filter(State_Name == c("Maryland", "Virginia, District of Columbia"))
+
+
 ```
 
 
