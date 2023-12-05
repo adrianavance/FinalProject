@@ -145,6 +145,10 @@ view(credit_unions)
 ```
 
 ```{r}
+# loading debt to income ratio data
+
+debt_to_income <- read.table("debt_to_income.txt", header = FALSE) 
+
 
 ```
 
