@@ -88,29 +88,6 @@ Health_map %>%
   geom_sf(aes(color = MeasureId))
 
 ```
-## loading in Capital Flows Dataset 
-```{r}
-library(readxl)
-#reading in data 
-capital_flows <- read_excel("capital_flows.xlsx", 3) %>%
-  filter(in_DMV == "TRUE") #filtering to DMV
-view(capital_flows)
-```
-
-## loading in Medical Debt Dataset
-```{r}
-#reading in data 
-medical_debt <- read_excel("medical_debt.xlsx") 
-
-#removing spaces from column names 
-names(medical_debt) <- gsub(" ", "_", names(medical_debt))
-view(medical_debt)
-
-#filter to DMV
-medical_debt<- medical_debt %>%
-  filter(State_Name == c("Maryland", "Virginia, District of Columbia"))
-
-```
 
 ```{r}
 library(tigris) 
@@ -120,17 +97,19 @@ state = "MD",
 county = "Montgomery",
 cb = FALSE,
 resolution = "500k",
-year = NULL)
+year = 2010)
 
 Virginia_tracts <- tracts(
   state = "VA",
   county = "Fairfax County",
-  resolution = "500k"
+  resolution = "500k", 
+  year = 2010
 )
 
 DC_tracts <- tracts(
   state = "DC",
-  resolution = "500k"
+  resolution = "500k",
+  year = 2010
 )
 
 DMV_tracts<- rbind_tigris(DC_tracts, Virginia_tracts, Maryland_tracts)
@@ -150,7 +129,7 @@ view(credit_unions)
 debt_to_income <- read.table("debt_to_income.txt", header = FALSE) 
 # Have to manually name columns (will filter to only useful columns later)
 
-colnames(debt_to_income) <- c('enterprise', 'record_num','state_postal_code', 'MSA', 'COUNTYFP', 'NAME', 'percent_minority', 'median_income', 'MSA_median_income', 'tract_income_ratio', 'borrower_income','AMI', 'borrower_income_ratio', 'UPB','purpose_of_loan', 'fed_guarantee', 'num_borrowers', 'first_time_borrower', 'borrower_race_1', 'race_2', 'race_3', 'race_4', 'race_5', 'borrower_ethnicity', 'co-borrower_race_1', 'co-race_2', 'co-race_3', 'co-race_4', 'co-race_5',   'co-borrower_ethnicity', 'borrower_gender', 'co-borrower_gender', 'borrower_age', 'co-borrower_age', 'occupancy_code', 'rate_spread', 'HOEPA_status', 'property_type', 'lien_status', 'borrower_over_sixtytwo', 'co-borrower_over_sixtytwo', 'LTV_ratio', 'note_date', 'mortgage_term', 'num_units', 'interest_rate', 'note_amount', 'preapproval', 'application_channel', 'AUS_name', 'borrower_credscore_model', 'co-borrower_credscore_model', 'DTI_ratio', 'discount_points', 'rate_period', 'manufactured_home_ownership', 'property_value', 'rural_tract', 'lower_MS_delta', 'Mid_Appalachia', 'persistent_poverty_county', 'concentrated_poverty', 'high_opportunity_area', 'QOZ')
+colnames(debt_to_income) <- c('enterprise', 'record_num','state_postal_code', 'MSA', 'COUNTYFP', 'NAME10', 'percent_minority', 'median_income', 'MSA_median_income', 'tract_income_ratio', 'borrower_income','AMI', 'borrower_income_ratio', 'UPB','purpose_of_loan', 'fed_guarantee', 'num_borrowers', 'first_time_borrower', 'borrower_race_1', 'race_2', 'race_3', 'race_4', 'race_5', 'borrower_ethnicity', 'co-borrower_race_1', 'co-race_2', 'co-race_3', 'co-race_4', 'co-race_5',   'co-borrower_ethnicity', 'borrower_gender', 'co-borrower_gender', 'borrower_age', 'co-borrower_age', 'occupancy_code', 'rate_spread', 'HOEPA_status', 'property_type', 'lien_status', 'borrower_over_sixtytwo', 'co-borrower_over_sixtytwo', 'LTV_ratio', 'note_date', 'mortgage_term', 'num_units', 'interest_rate', 'note_amount', 'preapproval', 'application_channel', 'AUS_name', 'borrower_credscore_model', 'co-borrower_credscore_model', 'DTI_ratio', 'discount_points', 'rate_period', 'manufactured_home_ownership', 'property_value', 'rural_tract', 'lower_MS_delta', 'Mid_Appalachia', 'persistent_poverty_county', 'concentrated_poverty', 'high_opportunity_area', 'QOZ')
 
 counties <- c(1, 59, 31) # Name county vector to filter dataset to needed counties only 
 
@@ -174,11 +153,16 @@ debt_to_income <- debt_to_income %>%
   mutate(COUNTYFP = 
            if_else(COUNTYFP == 31, "031", as.character(COUNTYFP)))
 
-debt_to_income$NAME <- debt_to_income$NAME / 100
+debt_to_income$NAME10 <- as.numeric(debt_to_income$NAME10)
 
-debt_to_income$NAME <- as.character(debt_to_income$NAME)
+DMV_tracts$NAME10 <- as.numeric(DMV_tracts$NAME10)
 
-debt_tract <- full_join(debt_to_income, DMV_tracts, by = "NAME")
+debt_to_income$NAME10 <- debt_to_income$NAME10 / 100
+
+debt_tract <- full_join(debt_to_income, DMV_tracts, by = "NAME10") #Merge census tract and debt datasets
+
+debt_tract$NAME10 <- debt_tract$NAME10 * 100
+# multiply census tracts by 100 so they are in the correct order 
 
 ```
 
