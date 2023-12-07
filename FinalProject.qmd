@@ -1,11 +1,15 @@
 ---
 title: "Final Project"
 author: "Adriana Vance, Kyle Kim, Elena Koshkin, Kamiryn Rose"
-format: html
-editor: visual
+execute:
+  warning: false
+format:
+  html:
+    embed-resources: true
 ---
 
 #### Loading datasets
+
 ```{r echo = false}
 library(httr)
 library(jsonlite)
