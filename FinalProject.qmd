@@ -216,7 +216,7 @@ banks_merged_try <- banks_join %>%
 
 banks_merged_try %>%
   ggplot() +
-  geom_sf(aes(x = x, y = y, fill = ward, color = n)) 
+  geom_sf(aes(x = x, y = y, fill = n, color = n, alpha = 0.2)) 
 
 ```
 
@@ -318,6 +318,12 @@ leaflet(debt_tract_2) %>%
     title = "Debt-to-Income Ratio",
     opacity = 1
   )
+
+
+```
+
+
+```{r}
 
 
 ```
