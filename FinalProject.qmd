@@ -74,6 +74,7 @@ All_states <- bind_rows(DC, MD, VA)
 
 
 
+```
 
 #### Playing around w mapping
 
@@ -149,7 +150,7 @@ banks_locations |>
   ggplot() +
   geom_sf(
     aes(color = ward), alpha = 0.4, size = 2) + 
-  coord_map()
+  coord_sf()
 
 # spatial join and census tracts 
 #match CRS of both objects using the given CRS: 4326
@@ -170,7 +171,20 @@ tm_polygons()
 DMV_tracts_filter<- DMV_tracts %>%
   select(GEOID10, geometry)
 
+plot(DMV_tracts_filter)
 
+tm_shape(DMV_tracts_filter) +
+  tm_polygons("banks_join")
+
+
+# this map of bank location in DC works, but I'm not sure it's correct and it's not a choropleth
+banks_join %>%
+  ggplot()+ 
+  geom_sf(data = DC_tracts) + 
+  geom_sf(data = banks_locations, aes(color = ward))
+  
+  
+```
 ```
 
 ```{r}
