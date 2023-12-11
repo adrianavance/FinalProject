@@ -155,6 +155,20 @@ banks_join <- st_join(banks_locations, DMV_tracts, st_intersects)
 
 
 #trying to plot bank locations over a map of the census tracts 
+gg <- ggplot()
+gg <- gg + geom_polygon(data=DMV_tracts, aes(x= xcoord, y= ycoord, group = GEOID10), color = "black", size=0.5) 
+gg <- gg + geom_point(data=banks_join, aes(x=longitude, y=latitude, color="red"))
+gg <- gg +  coord_map()
+gg
+
+install.packages("tmap")
+library(tmap)
+tm_shape(DMV_tracts) +
+tm_polygons()
+
+DMV_tracts_filter<- DMV_tracts %>%
+  select(GEOID10, geometry)
+
 
 ```
 
