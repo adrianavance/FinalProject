@@ -197,6 +197,7 @@ banks_merged <- banks_join %>%
   
 banks_merged_agg <- st_join(banks_merged, DMV_tracts,join = st_intersects)  
 
+# attempt 1
 p1<- banks_merged_agg %>%
   ggplot() + geom_sf(data = DC_tracts) +
   geom_sf(aes(fill = n), size = 0.1) + coord_sf() +
@@ -205,6 +206,17 @@ p1<- banks_merged_agg %>%
     high = "purple"
     ) 
 p1
+
+
+# attempt 2
+banks_merged_try <- banks_join %>%
+  group_by(ward) %>%
+  mutate(n = n()) %>%
+  ungroup()
+
+banks_merged_try %>%
+  ggplot() +
+  geom_sf(aes(x = x, y = y, fill = ward, color = n)) 
 
 ```
 
