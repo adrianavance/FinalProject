@@ -214,7 +214,7 @@ debt_to_income <- read.table("debt_to_income.txt", header = FALSE)
 
 colnames(debt_to_income) <- c('enterprise', 'record_num','state_postal_code', 'MSA', 'COUNTYFP', 'NAME10', 'percent_minority', 'median_income', 'MSA_median_income', 'tract_income_ratio', 'borrower_income','AMI', 'borrower_income_ratio', 'UPB','purpose_of_loan', 'fed_guarantee', 'num_borrowers', 'first_time_borrower', 'borrower_race_1', 'race_2', 'race_3', 'race_4', 'race_5', 'borrower_ethnicity', 'co-borrower_race_1', 'co-race_2', 'co-race_3', 'co-race_4', 'co-race_5',   'co-borrower_ethnicity', 'borrower_gender', 'co-borrower_gender', 'borrower_age', 'co-borrower_age', 'occupancy_code', 'rate_spread', 'HOEPA_status', 'property_type', 'lien_status', 'borrower_over_sixtytwo', 'co-borrower_over_sixtytwo', 'LTV_ratio', 'note_date', 'mortgage_term', 'num_units', 'interest_rate', 'note_amount', 'preapproval', 'application_channel', 'AUS_name', 'borrower_credscore_model', 'co-borrower_credscore_model', 'DTI_ratio', 'discount_points', 'rate_period', 'manufactured_home_ownership', 'property_value', 'rural_tract', 'lower_MS_delta', 'Mid_Appalachia', 'persistent_poverty_county', 'concentrated_poverty', 'high_opportunity_area', 'QOZ')
 
-counties <- c(1, 59, 31) # Name county vector to filter dataset to needed counties only 
+counties <- c(1, 59, 31, 33) # Name county vector to filter dataset to needed counties only 
 
 library(dplyr)
 debt_to_income <- debt_to_income %>%
@@ -236,6 +236,10 @@ debt_to_income <- debt_to_income %>%
   mutate(COUNTYFP = 
            if_else(COUNTYFP == 31, "031", as.character(COUNTYFP)))
 
+debt_to_income <- debt_to_income %>%
+  mutate(COUNTYFP = 
+           if_else(COUNTYFP == 33, "033", as.character(COUNTYFP)))
+
 debt_to_income$NAME10 <- as.numeric(debt_to_income$NAME10)
 
 DMV_tracts$NAME10 <- as.numeric(DMV_tracts$NAME10)
@@ -248,5 +252,23 @@ debt_tract_2 <- full_join(DMV_tracts, debt_to_income, by = "NAME10")
 debt_tract_2 %>%
   ggplot() + 
   geom_sf()
+
+# Setting CRS for geospatial visualizations 
+
+debt_tract_2 <- debt_tract_2 %>%
+  st_as_sf(coords = c("INTPTLON10", "INTPTLAT10"), remove = FALSE) %>%
+  st_set_crs(value = 4326) # setting CRS
+
+st_crs(debt_tract_2) # Checking CRS
+
+debt_tract_2 <- st_transform(debt_tract_2, crs = 4326)
+
+st_crs(debt_tract_2)
+
+debt_tract_2 %>%
+  ggplot() + 
+  geom_sf(aes(fill = DTI_ratio)) +
+  theme_void()
+    # Debt-to-income ratio Choropleth
 
 ```
