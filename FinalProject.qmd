@@ -73,7 +73,7 @@ VA <- get_acs(geography = "tract",
 All_states <- bind_rows(DC, MD, VA)
 
 
-```
+
 
 #### Playing around w mapping
 
@@ -143,10 +143,13 @@ banks_locations <- st_set_crs(banks_locations, value = 4326)
 #check the CRS
 st_crs(banks_locations)
 #plot map using ggplot2
+install.packages("mapproj")
+library(mapproj)
 banks_locations |>
   ggplot() +
   geom_sf(
-    aes(color = ward), alpha = 0.4, size = 2)
+    aes(color = ward), alpha = 0.4, size = 2) + 
+  coord_map()
 
 # spatial join and census tracts 
 #match CRS of both objects using the given CRS: 4326
@@ -157,6 +160,16 @@ banks_join <- st_join(banks_locations, DMV_tracts, st_intersects)
 
 
 #trying to plot bank locations over a map of the census tracts 
+
+
+install.packages("tmap")
+library(tmap)
+tm_shape(DMV_tracts) +
+tm_polygons()
+
+DMV_tracts_filter<- DMV_tracts %>%
+  select(GEOID10, geometry)
+
 
 ```
 
