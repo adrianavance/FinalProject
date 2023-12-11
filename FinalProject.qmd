@@ -15,6 +15,8 @@ library(tidyverse)
 library(tidycensus)
 library(purrr)
 library(sf)
+library(dplyr)
+
 
 #Read in CSV of CDC data
 Health <- read_csv("PLACES.csv")
@@ -72,6 +74,7 @@ VA <- get_acs(geography = "tract",
 All_states <- bind_rows(DC, MD, VA)
 
 
+
 ```
 
 #### Playing around w mapping
@@ -89,49 +92,28 @@ Health_map %>%
   geom_sf(aes(color = MeasureId))
 
 ```
-## loading in Capital Flows Dataset 
-```{r}
-library(readxl)
-#reading in data 
-capital_flows <- read_excel("capital_flows.xlsx", 3) %>%
-  filter(in_DMV == "TRUE") #filtering to DMV
-view(capital_flows)
-```
-
-## loading in Medical Debt Dataset
-```{r}
-#reading in data 
-medical_debt <- read_excel("medical_debt.xlsx") 
-
-#removing spaces from column names 
-names(medical_debt) <- gsub(" ", "_", names(medical_debt))
-view(medical_debt)
-
-#filter to DMV
-medical_debt<- medical_debt %>%
-  filter(State_Name == c("Maryland", "Virginia, District of Columbia"))
-
-```
 
 ```{r}
 library(tigris) 
 
 Maryland_tracts <- tracts(
 state = "MD",
-county = "Montgomery",
+county = c("Montgomery", "Prince George's"),
 cb = FALSE,
 resolution = "500k",
-year = NULL)
+year = 2010)
 
 Virginia_tracts <- tracts(
   state = "VA",
   county = "Fairfax County",
-  resolution = "500k"
+  resolution = "500k", 
+  year = 2010
 )
 
 DC_tracts <- tracts(
   state = "DC",
-  resolution = "500k"
+  resolution = "500k",
+  year = 2010
 )
 
 DMV_tracts<- rbind_tigris(DC_tracts, Virginia_tracts, Maryland_tracts)
@@ -143,6 +125,88 @@ DMV_tracts<- rbind_tigris(DC_tracts, Virginia_tracts, Maryland_tracts)
 credit_unions<- read.csv("Credit_Unions.csv")
 view(credit_unions)
 
+#loading banks data 
+banks <- read.csv("banks.csv")
+view(banks) 
+```
+
+NOTE: Necessary packages for the following code are "mapproj" and "tmap"
+Run: install.packages("mapproj") and install.packages("tmap") if not already loaded
+```{r}
+
+# replace the white space with underscores and lower-case all of the letters in column names
+names(banks) <- names(banks) |> 
+  str_replace_all("\\s", "_") |> 
+  str_to_lower()
+#filter the data to rows about banks that have valid longitudes and latitudes
+banks_locations <- banks |>
+  filter(!is.na(longitude), !is.na(latitude))
+#convert longitude and latitude columns into spatial geometries
+banks_locations <- st_as_sf(banks, coords = c("longitude", "latitude"))
+#set CRS to 4326 (WGS 84)
+banks_locations <- st_set_crs(banks_locations, value = 4326)
+#check the CRS
+st_crs(banks_locations)
+#plot map usinggit  ggplot2
+
+library(mapproj)
+banks_locations |>
+  ggplot() +
+  geom_sf(
+    aes(color = ward), alpha = 0.4, size = 2) + 
+  coord_sf()
+
+# spatial join and census tracts 
+#match CRS of both objects using the given CRS: 4326
+banks_locations <- st_transform(banks_locations, crs = st_crs(DMV_tracts))
+
+#spatial join bank points and census tracts
+banks_join <- st_join(banks_locations, DMV_tracts, st_intersects) 
+
+
+#trying to plot bank locations over a map of the census tracts 
+
+
+library(tmap)
+tm_shape(DMV_tracts) +
+tm_polygons()
+
+DMV_tracts_filter<- DMV_tracts %>%
+  select(GEOID10, geometry)
+
+plot(DMV_tracts_filter)
+
+tm_shape(DMV_tracts_filter) +
+  tm_polygons("banks_join")
+
+
+# this map of bank location in DC works, but I'm not sure it's correct and it's not a choropleth
+banks_join %>%
+  ggplot()+ 
+  geom_sf(data = DC_tracts) + 
+  geom_sf(data = banks_locations, aes(color = ward)) 
+  
+```
+
+```{r}
+
+# trying to create a choropleth and it is not working lol
+banks_merged <- banks_join %>%
+  group_by(ward) %>%
+  summarize(n = n())
+  
+  
+banks_merged_agg <- st_join(banks_merged, DMV_tracts,join = st_intersects)  
+
+p1<- banks_merged_agg %>%
+  ggplot() + geom_sf(data = DC_tracts) +
+  geom_sf(aes(fill = n), size = 0.1) + coord_sf() +
+  scale_fill_gradient(
+    low = "blue",  
+    high = "purple"
+    ) 
+p1
+
 ```
 
 ```{r}
@@ -151,9 +215,9 @@ view(credit_unions)
 debt_to_income <- read.table("debt_to_income.txt", header = FALSE) 
 # Have to manually name columns (will filter to only useful columns later)
 
-colnames(debt_to_income) <- c('enterprise', 'record_num','state_postal_code', 'MSA', 'COUNTYFP', 'NAME', 'percent_minority', 'median_income', 'MSA_median_income', 'tract_income_ratio', 'borrower_income','AMI', 'borrower_income_ratio', 'UPB','purpose_of_loan', 'fed_guarantee', 'num_borrowers', 'first_time_borrower', 'borrower_race_1', 'race_2', 'race_3', 'race_4', 'race_5', 'borrower_ethnicity', 'co-borrower_race_1', 'co-race_2', 'co-race_3', 'co-race_4', 'co-race_5',   'co-borrower_ethnicity', 'borrower_gender', 'co-borrower_gender', 'borrower_age', 'co-borrower_age', 'occupancy_code', 'rate_spread', 'HOEPA_status', 'property_type', 'lien_status', 'borrower_over_sixtytwo', 'co-borrower_over_sixtytwo', 'LTV_ratio', 'note_date', 'mortgage_term', 'num_units', 'interest_rate', 'note_amount', 'preapproval', 'application_channel', 'AUS_name', 'borrower_credscore_model', 'co-borrower_credscore_model', 'DTI_ratio', 'discount_points', 'rate_period', 'manufactured_home_ownership', 'property_value', 'rural_tract', 'lower_MS_delta', 'Mid_Appalachia', 'persistent_poverty_county', 'concentrated_poverty', 'high_opportunity_area', 'QOZ')
+colnames(debt_to_income) <- c('enterprise', 'record_num','state_postal_code', 'MSA', 'COUNTYFP', 'NAME10', 'percent_minority', 'median_income', 'MSA_median_income', 'tract_income_ratio', 'borrower_income','AMI', 'borrower_income_ratio', 'UPB','purpose_of_loan', 'fed_guarantee', 'num_borrowers', 'first_time_borrower', 'borrower_race_1', 'race_2', 'race_3', 'race_4', 'race_5', 'borrower_ethnicity', 'co-borrower_race_1', 'co-race_2', 'co-race_3', 'co-race_4', 'co-race_5',   'co-borrower_ethnicity', 'borrower_gender', 'co-borrower_gender', 'borrower_age', 'co-borrower_age', 'occupancy_code', 'rate_spread', 'HOEPA_status', 'property_type', 'lien_status', 'borrower_over_sixtytwo', 'co-borrower_over_sixtytwo', 'LTV_ratio', 'note_date', 'mortgage_term', 'num_units', 'interest_rate', 'note_amount', 'preapproval', 'application_channel', 'AUS_name', 'borrower_credscore_model', 'co-borrower_credscore_model', 'DTI_ratio', 'discount_points', 'rate_period', 'manufactured_home_ownership', 'property_value', 'rural_tract', 'lower_MS_delta', 'Mid_Appalachia', 'persistent_poverty_county', 'concentrated_poverty', 'high_opportunity_area', 'QOZ')
 
-counties <- c(1, 59, 31) # Name county vector to filter dataset to needed counties only 
+counties <- c(1, 59, 31, 33) # Name county vector to filter dataset to needed counties only 
 
 library(dplyr)
 debt_to_income <- debt_to_income %>%
@@ -175,10 +239,195 @@ debt_to_income <- debt_to_income %>%
   mutate(COUNTYFP = 
            if_else(COUNTYFP == 31, "031", as.character(COUNTYFP)))
 
-debt_to_income$NAME <- debt_to_income$NAME / 100
+debt_to_income <- debt_to_income %>%
+  mutate(COUNTYFP = 
+           if_else(COUNTYFP == 33, "033", as.character(COUNTYFP)))
 
-debt_to_income$NAME <- as.character(debt_to_income$NAME)
+debt_to_income$NAME10 <- as.numeric(debt_to_income$NAME10)
 
-debt_tract <- full_join(debt_to_income, DMV_tracts, by = "NAME")
+DMV_tracts$NAME10 <- as.numeric(DMV_tracts$NAME10)
+
+debt_to_income$NAME10 <- debt_to_income$NAME10 / 100
+
+#Merging the datasets by census tract name
+debt_tract_2 <- full_join(DMV_tracts, debt_to_income, by = "NAME10")
+
+debt_tract_2 %>%
+  ggplot() + 
+  geom_sf()
+
+# Setting CRS for geospatial visualizations 
+
+debt_tract_2 <- debt_tract_2 %>%
+  st_as_sf(coords = c("INTPTLON10", "INTPTLAT10"), remove = FALSE) %>%
+  st_set_crs(value = 4326) # setting CRS
+
+st_crs(debt_tract_2) # Checking CRS
+
+debt_tract_2 <- st_transform(debt_tract_2, crs = 4326)
+
+st_crs(debt_tract_2)
+
+# Debt-to-income ratio Choropleth
+debt_tract_2 %>%
+  ggplot() + 
+  geom_sf(aes(fill = DTI_ratio)) +
+  theme_void()
+
 
 ```
+<<<<<<< HEAD
+=======
+
+### Using Leaflet to create an interactive map of debt to income ratios in the DMV
+```{r}
+
+# Load required libraries
+library(leaflet)
+
+
+# Create a new variable in our spatial object for fill color
+debt_tract_2$FillColor <- colorQuantile("YlOrRd", debt_tract_2$DTI_ratio)(debt_tract_2$DTI_ratio)
+
+# Create a leaflet map
+leaflet(debt_tract_2) %>%
+  
+  # Add the polygons from the spatial object
+  addPolygons(
+    fillColor = ~FillColor,
+    fillOpacity = 0.7,
+    color = "white",
+    weight = 1,
+    popup = ~paste("Debt-to-Income Ratio: ", DTI_ratio)
+  ) %>%
+  
+  # Add legend
+  addLegend(
+    "bottomright",
+    pal = colorQuantile("YlOrRd", debt_tract_2$DTI_ratio),
+    values = ~debt_tract_2$DTI_ratio,
+    title = "Debt-to-Income Ratio",
+    opacity = 1
+  )
+
+
+```
+
+```{r}
+#Merged CDC Places dataset with census tracts and made graph and chloropleths
+
+#Read in CSV of CDC data
+Health <- read_csv("PLACES.csv")
+
+#Clean data and get long and lat columns
+Health2 <- Health %>%
+  separate(col = Geolocation, into = c("point", "coordinates"), sep = " ", extra = "merge", remove = FALSE) |>
+  separate(col = coordinates, into = c("longitude", "latitude"), sep = " ", remove = TRUE)
+
+Health2 <- Health2 %>%
+  mutate(longitude = gsub("[()]", "", longitude),
+         latitude = gsub("[()]", "", latitude))
+
+names(Health2) <- names(Health2) |> 
+  str_to_lower()
+
+#Filter depression
+depression_cancer <- Health2 |>
+  filter(short_question_text %in% c("Depression",	"Cancer (except skin)"), !is.na(longitude), !is.na(latitude))
+
+#convert longitude and latitude columns into spatial geometries
+sf_depression <- st_as_sf(depression_cancer, coords = c("longitude", "latitude"))
+#set CRS to 4326 (WGS 84)
+sf_depression <- st_set_crs(sf_depression, value = 4326)
+#check the CRS
+st_crs(sf_depression)
+
+#plot map using ggplot2
+sf_depression |>
+  ggplot() +
+  geom_sf(
+    aes(color = short_question_text), alpha = 0.4, size = 2) +
+  scale_color_manual(values = c("orange", "darkgreen"), labels = c("Cancer", "Depression")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#Load Census Tracts, Perform a Spatial Join, and Create Choropleth
+
+Maryland_tracts <- tracts(
+  state = "MD",
+  county = c("Montgomery"),
+  cb = FALSE,
+  resolution = "500k",
+  year = 2010)
+
+Virginia_tracts <- tracts(
+  state = "VA",
+  county = "Fairfax County",
+  resolution = "500k", 
+  year = 2010
+)
+
+DC_tracts <- tracts(
+  state = "DC",
+  resolution = "500k",
+  year = 2010
+)
+
+DMV_tracts<- rbind_tigris(DC_tracts, Virginia_tracts, Maryland_tracts) 
+
+names(DMV_tracts) <- names(DMV_tracts) |> 
+  str_to_lower()
+
+tracts1 <- DMV_tracts |>
+  select(geoid10, geometry)
+
+st_crs(tracts1)
+#match cRS
+sf_depression <- st_transform(sf_depression, crs = st_crs(tracts1))
+
+#spatial_join health points and census tracts
+Health_join <- st_join(sf_depression, tracts1, st_intersects)
+
+#calculate the count of cancer and depression in new dataframe
+health_merged <- Health_join |>
+  group_by(geoid10) |>
+  summarize(
+    depression_count = sum(short_question_text == "Depression"),
+    cancer_count = sum(short_question_text == "Cancer (except skin)")
+  )
+
+#join census tract back to new dataframe
+health_merged2 <- st_join(tracts1, health_merged, join = st_intersects)
+
+#create choropleth maps
+p1 <- health_merged2 |>
+  ggplot() +
+  geom_sf(
+    aes(
+      fill = cancer_count), color = "white", size = 0.1) +
+  scale_fill_gradient(
+    low = "#90ee90", 
+    high = "#F067B4",
+    na.value = "white"
+  ) +
+  labs(
+    fill = "count") +
+  theme_void()
+
+p2 <- health_merged2 |>
+  ggplot() +
+  geom_sf(
+    aes(
+      fill = depression_count), color = "white", size = 0.1) +
+  scale_fill_gradient(
+    low = "#90ee90", 
+    high = "#F067B4",
+    na.value = "white"
+  ) +
+  labs(
+    fill = "count") +
+  theme_void()
+
+p1 + p2
+
+```
+
