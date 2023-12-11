@@ -181,10 +181,29 @@ tm_shape(DMV_tracts_filter) +
 banks_join %>%
   ggplot()+ 
   geom_sf(data = DC_tracts) + 
-  geom_sf(data = banks_locations, aes(color = ward))
-  
+  geom_sf(data = banks_locations, aes(color = ward)) 
   
 ```
+
+```{r}
+
+# trying to create a choropleth and it is not working lol
+banks_merged <- banks_join %>%
+  group_by(ward) %>%
+  summarize(n = n())
+  
+  
+banks_merged_agg <- st_join(banks_merged, DMV_tracts,join = st_intersects)  
+
+p1<- banks_merged_agg %>%
+  ggplot() + geom_sf(data = DC_tracts) +
+  geom_sf(aes(fill = n), size = 0.1) + coord_sf() +
+  scale_fill_gradient(
+    low = "blue",  
+    high = "purple"
+    ) 
+p1
+
 ```
 
 ```{r}
