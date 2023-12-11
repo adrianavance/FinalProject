@@ -265,10 +265,45 @@ debt_tract_2 <- st_transform(debt_tract_2, crs = 4326)
 
 st_crs(debt_tract_2)
 
+# Debt-to-income ratio Choropleth
 debt_tract_2 %>%
   ggplot() + 
   geom_sf(aes(fill = DTI_ratio)) +
   theme_void()
-    # Debt-to-income ratio Choropleth
+
+
+```
+
+### Using Leaflet to create an interactive map of debt to income ratios in the DMV
+```{r}
+
+# Load required libraries
+library(leaflet)
+
+
+# Create a new variable in our spatial object for fill color
+debt_tract_2$FillColor <- colorQuantile("YlOrRd", debt_tract_2$DTI_ratio)(debt_tract_2$DTI_ratio)
+
+# Create a leaflet map
+leaflet(debt_tract_2) %>%
+  
+  # Add the polygons from the spatial object
+  addPolygons(
+    fillColor = ~FillColor,
+    fillOpacity = 0.7,
+    color = "white",
+    weight = 1,
+    popup = ~paste("Debt-to-Income Ratio: ", DTI_ratio)
+  ) %>%
+  
+  # Add legend
+  addLegend(
+    "bottomright",
+    pal = colorQuantile("YlOrRd", debt_tract_2$DTI_ratio),
+    values = ~debt_tract_2$DTI_ratio,
+    title = "Debt-to-Income Ratio",
+    opacity = 1
+  )
+
 
 ```
