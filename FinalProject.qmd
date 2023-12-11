@@ -127,6 +127,35 @@ view(banks)
 ```
 
 ```{r}
+# replace the white space with underscores and lower-case all of the letters in column names
+names(banks) <- names(banks) |> 
+  str_replace_all("\\s", "_") |> 
+  str_to_lower()
+#filter the data to rows about banks that have valid longitudes and latitudes
+banks_locations <- banks |>
+  filter(!is.na(longitude), !is.na(latitude))
+#convert longitude and latitude columns into spatial geometries
+banks_locations <- st_as_sf(banks, coords = c("longitude", "latitude"))
+#set CRS to 4326 (WGS 84)
+banks_locations <- st_set_crs(banks_locations, value = 4326)
+#check the CRS
+st_crs(banks_locations)
+#plot map using ggplot2
+banks_locations |>
+  ggplot() +
+  geom_sf(
+    aes(color = ward), alpha = 0.4, size = 2)
+
+# spatial join and census tracts 
+#match CRS of both objects using the given CRS: 4326
+banks_locations <- st_transform(banks_locations, crs = st_crs(DMV_tracts))
+
+#spatial join bank points and census tracts
+banks_join <- st_join(banks_locations, DMV_tracts, st_intersects)
+
+```
+
+```{r}
 # loading debt to income ratio data
 
 debt_to_income <- read.table("debt_to_income.txt", header = FALSE) 
