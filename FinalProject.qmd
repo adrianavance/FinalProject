@@ -151,7 +151,10 @@ banks_locations |>
 banks_locations <- st_transform(banks_locations, crs = st_crs(DMV_tracts))
 
 #spatial join bank points and census tracts
-banks_join <- st_join(banks_locations, DMV_tracts, st_intersects)
+banks_join <- st_join(banks_locations, DMV_tracts, st_intersects) 
+
+
+#trying to plot bank locations over a map of the census tracts 
 
 ```
 
