@@ -162,8 +162,6 @@ debt_to_income$NAME10 <- debt_to_income$NAME10 / 100
 debt_tract <- full_join(debt_to_income, DMV_tracts, by = "NAME10") #Merge census tract and debt datasets
 
 debt_tract$NAME10 <- debt_tract$NAME10 * 100
-# multiply census tracts by 100 so they are in the correct order 
+# multiply census tracts by 100 so they are in the correct format
 
 ```
-
-
