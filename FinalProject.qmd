@@ -142,7 +142,7 @@ banks_locations <- st_as_sf(banks, coords = c("longitude", "latitude"))
 banks_locations <- st_set_crs(banks_locations, value = 4326)
 #check the CRS
 st_crs(banks_locations)
-#plot map using ggplot2
+#plot map usinggit  ggplot2
 install.packages("mapproj")
 library(mapproj)
 banks_locations |>
