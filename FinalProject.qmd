@@ -121,6 +121,9 @@ DMV_tracts<- rbind_tigris(DC_tracts, Virginia_tracts, Maryland_tracts)
 credit_unions<- read.csv("Credit_Unions.csv")
 view(credit_unions)
 
+#loading banks data 
+banks <- read.csv("banks.csv")
+view(banks) 
 ```
 
 ```{r}
