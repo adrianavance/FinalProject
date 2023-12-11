@@ -196,12 +196,10 @@ DMV_tracts$NAME10 <- as.numeric(DMV_tracts$NAME10)
 
 debt_to_income$NAME10 <- debt_to_income$NAME10 / 100
 
-debt_tract <- full_join(debt_to_income, DMV_tracts, by = "NAME10") #Merge census tract and debt datasets
+#Merging the datasets by census tract name
+debt_tract_2 <- full_join(DMV_tracts, debt_to_income, by = "NAME10")
 
-debt_tract$NAME10 <- debt_tract$NAME10 * 100
-# multiply census tracts by 100 so they are in the correct format
-
-DMV_tracts %>%
+debt_tract_2 %>%
   ggplot() + 
   geom_sf()
 
