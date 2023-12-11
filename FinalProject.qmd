@@ -129,7 +129,10 @@ banks <- read.csv("banks.csv")
 view(banks) 
 ```
 
+NOTE: Necessary packages for the following code are "mapproj" and "tmap"
+Run: install.packages("mapproj") and install.packages("tmap") if not already loaded
 ```{r}
+
 # replace the white space with underscores and lower-case all of the letters in column names
 names(banks) <- names(banks) |> 
   str_replace_all("\\s", "_") |> 
@@ -144,7 +147,7 @@ banks_locations <- st_set_crs(banks_locations, value = 4326)
 #check the CRS
 st_crs(banks_locations)
 #plot map usinggit  ggplot2
-install.packages("mapproj")
+
 library(mapproj)
 banks_locations |>
   ggplot() +
@@ -163,7 +166,6 @@ banks_join <- st_join(banks_locations, DMV_tracts, st_intersects)
 #trying to plot bank locations over a map of the census tracts 
 
 
-install.packages("tmap")
 library(tmap)
 tm_shape(DMV_tracts) +
 tm_polygons()
