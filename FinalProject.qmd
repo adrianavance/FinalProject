@@ -1,13 +1,14 @@
 ---
 title: "Final Project"
 author: "Adriana Vance, Kyle Kim, Elena Koshkin, Kamiryn Rose"
-format: html
-editor: visual
+execute:
+  warning: false
+format:
+  html:
+    embed-resources: true
 ---
 
-#### Loading Data Sets
-
-```{r echo = false}
+```{r echo = false, message=FALSE, warning=FALSE}
 library(httr)
 library(jsonlite)
 library(tidyverse)
@@ -160,7 +161,7 @@ banks_locations |>
 banks_locations <- st_transform(banks_locations, crs = st_crs(DMV_tracts))
 
 #spatial join bank points and census tracts
-banks_join <- st_join(banks_locations, DMV_tracts, st_intersects) 
+banks_join <- st_join(DMV_tracts, banks_locations, st_intersects) 
 
 
 #trying to plot bank locations over a map of the census tracts 
@@ -191,32 +192,36 @@ banks_join %>%
 
 # trying to create a choropleth and it is not working lol
 banks_merged <- banks_join %>%
-  group_by(ward) %>%
-  summarize(n = n())
+  group_by(name10) %>%
+  mutate(n = n()) %>%
+  ungroup()
   
   
-banks_merged_agg <- st_join(banks_merged, DMV_tracts,join = st_intersects)  
+banks_merged_agg <- st_join(DC_tracts, banks_merged, join = st_intersects)  
+
 
 # attempt 1
 p1<- banks_merged_agg %>%
+  
   ggplot() + geom_sf(data = DC_tracts) +
   geom_sf(aes(fill = n), size = 0.1) + coord_sf() +
-  scale_fill_gradient(
-    low = "blue",  
-    high = "purple"
+  scale_x_continuous(breaks = 1:5) +
+ scale_fill_gradient(
+    low = "#90ee90", 
+    high = "#F067B4",
     ) 
 p1
 
 
 # attempt 2
 banks_merged_try <- banks_join %>%
-  group_by(ward) %>%
+  group_by(name10) %>%
   mutate(n = n()) %>%
   ungroup()
 
 banks_merged_try %>%
   ggplot() +
-  geom_sf(aes(x = x, y = y, fill = n, color = n, alpha = 0.2)) 
+  geom_sf(aes(fill = n, color = n, alpha = 0.2)) 
 
 ```
 
@@ -287,6 +292,8 @@ debt_tract_2 %>%
 
 
 ```
+<<<<<<< HEAD
+=======
 
 ### Using Leaflet to create an interactive map of debt to income ratios in the DMV
 ```{r}
@@ -322,8 +329,122 @@ leaflet(debt_tract_2) %>%
 
 ```
 
+<<<<<<< HEAD
 
+=======
 ```{r}
+#Merged CDC Places dataset with census tracts and made graph and chloropleths
 
+#Read in CSV of CDC data
+Health <- read_csv("PLACES.csv")
+
+#Clean data and get long and lat columns
+Health2 <- Health %>%
+  separate(col = Geolocation, into = c("point", "coordinates"), sep = " ", extra = "merge", remove = FALSE) |>
+  separate(col = coordinates, into = c("longitude", "latitude"), sep = " ", remove = TRUE)
+
+Health2 <- Health2 %>%
+  mutate(longitude = gsub("[()]", "", longitude),
+         latitude = gsub("[()]", "", latitude))
+
+names(Health2) <- names(Health2) |> 
+  str_to_lower()
+
+#Filter depression
+depression_cancer <- Health2 |>
+  filter(short_question_text %in% c("Depression",	"Cancer (except skin)"), !is.na(longitude), !is.na(latitude))
+
+#convert longitude and latitude columns into spatial geometries
+sf_depression <- st_as_sf(depression_cancer, coords = c("longitude", "latitude"))
+#set CRS to 4326 (WGS 84)
+sf_depression <- st_set_crs(sf_depression, value = 4326)
+#check the CRS
+st_crs(sf_depression)
+
+#plot map using ggplot2
+sf_depression |>
+  ggplot() +
+  geom_sf(
+    aes(color = short_question_text), alpha = 0.4, size = 2) +
+  scale_color_manual(values = c("orange", "darkgreen"), labels = c("Cancer", "Depression")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#Load Census Tracts, Perform a Spatial Join, and Create Choropleth
+
+Maryland_tracts <- tracts(
+  state = "MD",
+  county = c("Montgomery"),
+  cb = FALSE,
+  resolution = "500k",
+  year = 2010)
+
+Virginia_tracts <- tracts(
+  state = "VA",
+  county = "Fairfax County",
+  resolution = "500k", 
+  year = 2010
+)
+
+DC_tracts <- tracts(
+  state = "DC",
+  resolution = "500k",
+  year = 2010
+)
+
+DMV_tracts<- rbind_tigris(DC_tracts, Virginia_tracts, Maryland_tracts) 
+
+names(DMV_tracts) <- names(DMV_tracts) |> 
+  str_to_lower()
+
+
+st_crs(DMV_tracts)
+#match cRS
+sf_depression <- st_transform(sf_depression, crs = st_crs(DMV_tracts))
+
+#spatial_join health points and census tracts
+Health_join <- st_join(sf_depression, DMV_tracts, st_intersects)
+
+#calculate the count of cancer and depression in new dataframe
+health_merged <- Health_join |>
+  group_by(name10) |>
+  summarize(
+    depression_count = sum(short_question_text == "Depression"),
+    cancer_count = sum(short_question_text == "Cancer (except skin)")
+  )
+
+#join census tract back to new dataframe
+health_merged2 <- st_join(tracts1, health_merged, join = st_intersects)
+
+#create choropleth maps
+map1 <- health_merged2 |>
+  ggplot() +
+  geom_sf(
+    aes(
+      fill = cancer_count), color = "white", size = 0.1) +
+  scale_fill_gradient(
+    low = "#90ee90", 
+    high = "#F067B4",
+    na.value = "white"
+  ) +
+  labs(
+    fill = "count") +
+  theme_void()
+
+map2 <- health_merged2 |>
+  ggplot() +
+  geom_sf(
+    aes(
+      fill = depression_count), color = "white", size = 0.1) +
+  scale_fill_gradient(
+    low = "#90ee90", 
+    high = "#F067B4",
+    na.value = "white"
+  ) +
+  labs(
+    fill = "count") +
+  theme_void()
+library(patchwork)
+map1 + map2
 
 ```
+
