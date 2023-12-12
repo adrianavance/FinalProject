@@ -228,9 +228,9 @@ banks_merged_try %>%
 # loading debt to income ratio data
 
 debt_to_income <- read.table("debt_to_income.txt", header = FALSE) 
-# Have to manually name columns (will filter to only useful columns later)
+# Have to manually name columns
 
-colnames(debt_to_income) <- c('enterprise', 'record_num','state_postal_code', 'MSA', 'COUNTYFP', 'NAME10', 'percent_minority', 'median_income', 'MSA_median_income', 'tract_income_ratio', 'borrower_income','AMI', 'borrower_income_ratio', 'UPB','purpose_of_loan', 'fed_guarantee', 'num_borrowers', 'first_time_borrower', 'borrower_race_1', 'race_2', 'race_3', 'race_4', 'race_5', 'borrower_ethnicity', 'co-borrower_race_1', 'co-race_2', 'co-race_3', 'co-race_4', 'co-race_5',   'co-borrower_ethnicity', 'borrower_gender', 'co-borrower_gender', 'borrower_age', 'co-borrower_age', 'occupancy_code', 'rate_spread', 'HOEPA_status', 'property_type', 'lien_status', 'borrower_over_sixtytwo', 'co-borrower_over_sixtytwo', 'LTV_ratio', 'note_date', 'mortgage_term', 'num_units', 'interest_rate', 'note_amount', 'preapproval', 'application_channel', 'AUS_name', 'borrower_credscore_model', 'co-borrower_credscore_model', 'DTI_ratio', 'discount_points', 'rate_period', 'manufactured_home_ownership', 'property_value', 'rural_tract', 'lower_MS_delta', 'Mid_Appalachia', 'persistent_poverty_county', 'concentrated_poverty', 'high_opportunity_area', 'QOZ')
+colnames(debt_to_income) <- c('enterprise', 'record_num','state_postal_code', 'MSA', 'COUNTYFP', 'NAME10', 'percent_minority', 'median_income', 'MSA_median_income', 'tract_income_ratio', 'borrower_income','AMI', 'borrower_income_ratio', 'UPB','purpose_of_loan', 'fed_guarantee', 'num_borrowers', 'first_time_borrower', 'borrower_race_1', 'race_2', 'race_3', 'race_4', 'race_5', 'borrower_ethnicity', 'co_borrower_race_1', 'co_race_2', 'co_race_3', 'co_race_4', 'co_race_5',   'co_borrower_ethnicity', 'borrower_gender', 'co_borrower_gender', 'borrower_age', 'co_borrower_age', 'occupancy_code', 'rate_spread', 'HOEPA_status', 'property_type', 'lien_status', 'borrower_over_sixtytwo', 'co_borrower_over_sixtytwo', 'LTV_ratio', 'note_date', 'mortgage_term', 'num_units', 'interest_rate', 'note_amount', 'preapproval', 'application_channel', 'AUS_name', 'borrower_credscore_model', 'co_borrower_credscore_model', 'DTI_ratio', 'discount_points', 'rate_period', 'manufactured_home_ownership', 'property_value', 'rural_tract', 'lower_MS_delta', 'Mid_Appalachia', 'persistent_poverty_county', 'concentrated_poverty', 'high_opportunity_area', 'QOZ')
 
 counties <- c(1, 59, 31, 33) # Name county vector to filter dataset to needed counties only 
 
@@ -472,7 +472,7 @@ st_crs(debt_tract_2_sf)
 st_crs(Health_sf)
 
 #Spatial Join
-joined_health_debt_tract <- st_join(debt_tract_2_sf, Health_sf, join = st_intersects)
+health_debt <- st_join(debt_tract_2_sf, Health_sf, join = st_intersects)
 
 
 ```
@@ -480,6 +480,8 @@ joined_health_debt_tract <- st_join(debt_tract_2_sf, Health_sf, join = st_inters
 #### Machine Learning Model 
 
 ```{r}
+
+
 library(tidymodels)
 set.seed(102102938)
 
@@ -489,6 +491,11 @@ debt_train <- training(x = split)
 debt_test <- testing(x = split)
 
 ## Health outcome for machine learning model will be percentage of instances of depression in a censust tract
+
+```
+
+### Machine Learning Model #1: Predicting percentage of minorities in a census tract using the single family loan data
+```{r}
 
 debt_rec <- recipe(percent_minority ~ borrower_income + borrower_age + borrower_income_ratio + tract_income_ratio + DTI_ratio + interest_rate + note_amount, data = debt_train) %>%
   step_normalize(all_numeric_predictors()) %>%
@@ -523,5 +530,53 @@ lasso_metrics <- lasso_fit %>%
 lasso_fit %>%
   select_best(metric = "rmse")
 
+# The RMSE of this model's best fit is around 22. 
+
 ```
+
+### Machine Learning Model #2: Predicting rates of depression in a census tract using economic predictors from the debt-to-income dataset
+
+```{r}
+library(randomForest)
+library(caret)
+# Filtering dataset for second machine learning  model 
+
+
+# We want only observations for rates of depression, and to exclude columns that have all values as NA or that are not interpretable by random forest modeling
+depression_debt <- health_debt %>%
+  drop_na(Data_Value) %>%
+  filter(MeasureId == "DEPRESSION") %>%
+  select(-Data_Value_Footnote, -Data_Value_Footnote_Symbol) %>%
+  st_drop_geometry()
+
+# Omit all NA values from dataset
+depression_debt <- na.omit(depression_debt)
+
+
+set.seed(12122023)
+split2 <- initial_split(data = depression_debt, prop = 0.8)
+
+depression_train2 <- training(x = split2)
+depression_test2 <- testing(x = split2)
+
+
+# Train the initial randomForest model with specified predictors
+rf_mod <- randomForest(Data_Value ~ borrower_income + borrower_age + borrower_income_ratio + tract_income_ratio + DTI_ratio + interest_rate + note_amount + property_value + percent_minority, data = depression_train2)
+
+rf_mod 
+# This model only explains about 77.6% of the variance. After filtering out observations that are not interpretable by RF modeling, we will try a random forest model with all predictors
+
+# Trying some tuning to see if we can find the best amount of mtrys to use for the model
+bestmtry <- tuneRF(depression_train2,depression_train2$Data_Value,stepFactor = 2, improve = 0.01, trace = TRUE, plot = T, doBest = TRUE) 
+
+# tuneRF shows that the best amount of mtrys is 32. Running random forest model again with 32 mtrys to see if it further optimizes the model. 
+best_mtry <- 32
+
+rf_mod3 <- randomForest(Data_Value ~., data = depression_train2, mtry = best_mtry)
+
+rf_mod3
+# This model shows great improvement from the previous, explaining 99.99% of the variance. We can use this model to predict health outcomes on the testing dataset. 
+
+```
+
 
