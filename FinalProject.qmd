@@ -451,6 +451,16 @@ map1 + map2
 #### Machine Learning Model 
 
 ```{r}
+library(tidymodels)
+set.seed(102102938)
+
+split <- initial_split(data = debt_to_income, prop = 0.75)
+
+debt_train <- training(x = split)
+debt_test <- testing(x = split)
+
+## Health outcome for machine learning model will be percentage of instances of depression in a censust tract
+
 debt_rec <- recipe(percent_minority ~ borrower_income + borrower_age + borrower_income_ratio + tract_income_ratio + DTI_ratio + interest_rate + note_amount, data = debt_train) %>%
   step_normalize(all_numeric_predictors()) %>%
   step_corr(all_numeric_predictors())
