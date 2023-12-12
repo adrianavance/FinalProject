@@ -448,3 +448,41 @@ map1 + map2
 
 ```
 
+#### Machine Learning Model 
+
+```{r}
+debt_rec <- recipe(percent_minority ~ borrower_income + borrower_age + borrower_income_ratio + tract_income_ratio + DTI_ratio + interest_rate + note_amount, data = debt_train) %>%
+  step_normalize(all_numeric_predictors()) %>%
+  step_corr(all_numeric_predictors())
+
+# Creating tuning grid for lasso model
+lasso_grid <- grid_regular(penalty())
+
+# LASSO model
+lasso_mod <- linear_reg(penalty = tune(), mixture = 1) %>% 
+  set_engine("glmnet")
+
+# LASSO workflow
+lasso_wf <- workflow() %>%
+  add_recipe(debt_rec) %>%
+  add_model(lasso_mod) 
+
+folds <- vfold_cv(data = debt_train, v = 10, repeats = 1)
+
+# LASSO fit
+lasso_fit <- lasso_wf %>%
+  tune_grid(
+    resamples = folds,
+    grid = lasso_grid, 
+    metrics = metric_set(rmse, mae), 
+    control = control_grid(save_pred = TRUE))
+
+# Evaluating models
+lasso_metrics <- lasso_fit %>%
+  collect_metrics(summarize = TRUE) 
+
+lasso_fit %>%
+  select_best(metric = "rmse")
+
+```
+
