@@ -480,8 +480,6 @@ health_debt <- st_join(debt_tract_2_sf, Health_sf, join = st_intersects)
 #### Machine Learning Model 
 
 ```{r}
-
-
 library(tidymodels)
 set.seed(102102938)
 
@@ -539,6 +537,7 @@ lasso_fit %>%
 ```{r}
 library(randomForest)
 library(caret)
+library(tidymodels)
 # Filtering dataset for second machine learning  model 
 
 
@@ -576,6 +575,16 @@ rf_mod3 <- randomForest(Data_Value ~., data = depression_train2, mtry = best_mtr
 
 rf_mod3
 # This model shows great improvement from the previous, explaining 99.99% of the variance. We can use this model to predict health outcomes on the testing dataset. 
+
+predicted_values <- predict(rf_mod3, newdata = depression_test2, type = "class")
+
+test_predictions <- bind_cols(
+  depression_test2, predicted_values)
+
+test_predictions <- test_predictions %>%
+  rename(.pred = ...99)
+
+metrics(test_predictions, truth = Data_Value, estimate = .pred)
 
 ```
 
