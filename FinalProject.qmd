@@ -130,6 +130,15 @@ Health_sf <- st_as_sf(Health, wkt = "Geolocation", crs = 4326)
 st_crs(debt_tract_2_sf)
 st_crs(Health_sf)
 
+#Transform debt dataset to match health
+
+debt_tract_2_sf <- st_transform(debt_tract_2_sf, st_crs(Health_sf))
+
+#Reconfirm if they have the same crs.
+#Now they do.
+st_crs(debt_tract_2_sf)
+st_crs(Health_sf)
+
 #Spatial Join
 joined_health_debt_tract <- st_join(debt_tract_2_sf, Health_sf, join = st_intersects)
 
