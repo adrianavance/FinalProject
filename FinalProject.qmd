@@ -125,11 +125,16 @@ debt_tract_2_sf <- st_as_sf(debt_tract_2, coords = c("INTPTLON10", "INTPTLAT10")
 # Convert 'Geolocation' column to an sf object
 Health_sf <- st_as_sf(Health, wkt = "Geolocation", crs = 4326)
 
+#Confirm if health and debt use the same coordinate reference systems (crs) 
+#They do not. 
+st_crs(debt_tract_2_sf)
+st_crs(Health_sf)
 
+#Spatial Join
+joined_health_debt_tract <- st_join(debt_tract_2_sf, Health_sf, join = st_intersects)
 
-
-
-
+#Extracting csv
+write.csv(as.data.frame(joined_health_debt_tract), "joined_health_debt_tract.csv")
 
 
 
