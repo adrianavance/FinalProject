@@ -74,7 +74,6 @@ VA <- get_acs(geography = "tract",
 All_states <- bind_rows(DC, MD, VA)
 
 
-
 ```
 
 #### Playing around w mapping
@@ -82,7 +81,7 @@ All_states <- bind_rows(DC, MD, VA)
 ```{r}
 # Change geometry to be readable by SF
 
-Health_map <- Health_filter %>%
+Health_map <- Health %>%
   st_as_sf(wkt = "Geolocation", remove = FALSE) %>%
   st_set_crs(value = 4326) # setting CRS
 
@@ -123,11 +122,11 @@ DMV_tracts<- rbind_tigris(DC_tracts, Virginia_tracts, Maryland_tracts)
 ```{r}
 #loading credit unions data
 credit_unions<- read.csv("Credit_Unions.csv")
-view(credit_unions)
+
 
 #loading banks data 
 banks <- read.csv("banks.csv")
-view(banks) 
+
 ```
 
 NOTE: Necessary packages for the following code are "mapproj" and "tmap"
@@ -292,8 +291,7 @@ debt_tract_2 %>%
 
 
 ```
-<<<<<<< HEAD
-=======
+
 
 ### Using Leaflet to create an interactive map of debt to income ratios in the DMV
 ```{r}
@@ -329,9 +327,7 @@ leaflet(debt_tract_2) %>%
 
 ```
 
-<<<<<<< HEAD
 
-=======
 ```{r}
 #Merged CDC Places dataset with census tracts and made graph and chloropleths
 
@@ -445,6 +441,39 @@ map2 <- health_merged2 |>
   theme_void()
 library(patchwork)
 map1 + map2
+
+```
+
+#### Merging Health and Debt-to-Income dataset
+```{r}
+
+#Merging health dataset with debt_tract_2 
+
+library(sf)
+
+#Converting long and lat coordinates to sf objects
+debt_tract_2_sf <- st_as_sf(debt_tract_2, coords = c("INTPTLON10", "INTPTLAT10"), crs = 4326)
+
+# Convert 'Geolocation' column to an sf object
+Health_sf <- st_as_sf(Health, wkt = "Geolocation", crs = 4326)
+
+#Confirm if health and debt use the same coordinate reference systems (crs) 
+
+#They do not. 
+st_crs(debt_tract_2_sf)
+st_crs(Health_sf)
+
+#Transform debt dataset to match health
+debt_tract_2_sf <- st_transform(debt_tract_2_sf, st_crs(Health_sf))
+
+#Reconfirm if they have the same crs.
+#Now they do.
+st_crs(debt_tract_2_sf)
+st_crs(Health_sf)
+
+#Spatial Join
+joined_health_debt_tract <- st_join(debt_tract_2_sf, Health_sf, join = st_intersects)
+
 
 ```
 
