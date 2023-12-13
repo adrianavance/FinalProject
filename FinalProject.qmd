@@ -186,7 +186,7 @@ banks_join %>%
   geom_sf(data = banks_locations, aes(color = ward)) 
   
 ```
-
+# Banks Choropleth
 ```{r}
 
 # trying to create a choropleth and it is not working lol
@@ -224,8 +224,23 @@ banks_merged_try %>%
 
 ```
 
-
+# Geospatial Analysis
 ```{r}
+
+# looking at economic outcomes in relationship to distance to banks 
+banking<- st_transform(banks_join, crs = 4326)
+DC<- st_transform(DC_tracts, crs = 4326)
+
+econ <- debt_tract_2 %>%
+  st_as_sf(coords = c("INTPTLON10", "INTPTLAT10"), remove = FALSE) %>%
+  st_set_crs(value = 4326) # setting CRS
+
+banks_filtered<- st_join(banking, DC, left= FALSE)
+banks_econ<- st_join(econ, st_buffer(banks_filtered, dist = 400))
+max_banks_econ<- banks_econ %>%
+  group_by(NAME10) %>%
+  filter(DTI_ratio > 20) %>%
+  summarize(n = n()) 
 
 #looking at public health outcomes in relationship to distance to banks 
 
