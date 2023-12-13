@@ -161,17 +161,17 @@ banks_join <- st_join(DMV_tracts, banks_locations, st_intersects)
 
 #trying to plot bank locations over a map of the census tracts 
 
-library(tmap)
-tm_shape(DMV_tracts) +
-tm_polygons()
+#library(tmap)
+#tm_shape(DMV_tracts) +
+#tm_polygons()
 
-DMV_tracts_filter<- DMV_tracts %>%
-  select(GEOID10, geometry)
+#DMV_tracts_filter<- DMV_tracts %>%
+ # select(GEOID10, geometry)
 
-plot(DMV_tracts_filter)
+#plot(DMV_tracts_filter)
 
-tm_shape(DMV_tracts_filter) +
-  tm_polygons("banks_join")
+#tm_shape(DMV_tracts_filter) +
+ # tm_polygons("banks_join")
 
 
 # this map of bank location in DC works, but I'm not sure it's correct and it's not a choropleth
@@ -248,7 +248,7 @@ healthyy<- st_transform(healthyy, crs = 4326)
 
 #Filter depression
 healthyy <- healthyy %>%
-  filter(short_question_text %in% c("Depression",	"Cancer (except skin)"))
+  filter(short_question_text %in% c("Depression","Cancer (except skin)"))
       
 
 #transforming so it matches for the spatial join
@@ -517,7 +517,6 @@ st_crs(Health_sf)
 #Spatial Join
 health_debt <- st_join(debt_tract_2_sf, Health_sf, join = st_intersects)
 
-
 ```
 
 #### Machine Learning Model 
@@ -638,14 +637,18 @@ prediction_table <- tibble(test_predictions$Data_Value, test_predictions$.pred)
 # ATTEMPT
 
 library(tidyclust)
+library(broom)
 
-debt_pca_rec <- recipe(~ ., data = debt_to_income) %>%
-    step_pca(all_numeric(), num_comp = 3) %>%
-    prep(data = debt_to_income) %>%
-    bake(new_data = debt_to_income) %>%
-    select(PC1, PC2)
+dti_data <- debt_to_income %>%
+  select(NAME10, DTI_ratio)
 
-viz_1 <- debt_pca_rec %>%
+dti_pca_rec <- recipe(~ ., data = dti_data) %>%
+  step_pca(all_numeric(), id = "pca") %>%
+  prep(data = dti_data) %>%
+  bake(new_data = dti_data) 
+
+
+viz_1 <- dti_pca_rec %>%
   ggplot() +
   geom_point(
     mapping = aes(x = PC1, y = PC2),
@@ -662,14 +665,14 @@ debt_pca_fun<- function(DTI, df){
     replace(is.na(.), 0) %>%
     filter(DTI_ratio == DTI) 
   
-debt_pca_rec <- recipe(~ ., data = debt_to_income) %>%
-    step_pca(all_numeric(), num_comp = 3) %>%
-    prep(data = debt_to_income) %>%
-    bake(new_data = debt_to_income) %>%
+debt_pca_rec <- recipe(~ ., data = dti_data) %>%
+    step_pca(all_numeric(), num_comp = 2) %>%
+    prep(data = dti_data) %>%
+    bake(new_data = dti_data) %>%
     select(PC1, PC2)
     
 
-kmeans_rec<- recipe(~ ., data = debt_to_income) %>%
+kmeans_rec<- recipe(~ ., data = dti_data) %>%
   step_select(all_numeric())
   
   debt_pca_spec <- k_means(
@@ -683,10 +686,10 @@ debt_pca_workflow <- workflow(
 )
 
 final_fit <- debt_pca_workflow %>%
-  fit(data = debt_to_income)
+  fit(data = dti_data)
 
 debt_clusters <- 
-  bind_cols(debt_to_income, debt_pca_rec, cluster = final_fit %>%
+  bind_cols(dti_data, debt_pca_rec, cluster = final_fit %>%
     extract_cluster_assignment() %>%
     pull(.cluster) )
 
@@ -700,5 +703,55 @@ final_result <- map_dfr(.x = DTI, .f = debt_pca_fun, df = debt_to_income)
 print(final_result)
   
 
+
+```
+
+```{r}
+clust_plot <- final_result %>%
+  ggplot() +
+  geom_point(
+    mapping = aes(x = PC1, y = PC2),
+    alpha = 0.5
+  ) +
+  labs(
+    title = "DTI",
+    x = "PC1",
+    y = "PC2"
+  ) + 
+  theme_classic()
+
+clust_plot
+```
+
+
+```{r}
+library(factoextra)
+
+set.seed(20220414)
+fviz_nbclust(
+  dti_data, 
+  FUN = hcut, 
+  k.max = 10, 
+  method = "wss", 
+  hc_func = "hclust", 
+  hc_method = "ward.D2", 
+  hc_metric = "euclidean"
+)
+
+set.seed(20220414)
+fviz_nbclust(
+  dti_data,
+  FUN = hcut,
+  k.max = 10,
+  method = "silhouette",
+  hc_func = "hclust",
+  hc_method = "ward.D2",
+  hc_metric = "euclidean"
+)
+
+d <- dist(dti_data, method = "euclidean")
+hclust_euc<- hclust(d, "ward.D2")
+plot(hclust_euc, cex = 0.6, hang = -1, main = "Cluster Dendogram")
+rect.hclust(hclust_euc, k = 4, border = "purple")
 
 ```
