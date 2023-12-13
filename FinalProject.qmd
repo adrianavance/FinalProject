@@ -120,23 +120,19 @@ DMV_tracts<- rbind_tigris(DC_tracts, Virginia_tracts, Maryland_tracts)
 ```
 
 ```{r}
-#loading credit unions data
-credit_unions<- read.csv("Credit_Unions.csv")
-
-
 #loading banks data 
 banks <- read.csv("banks.csv")
 
+# replace the white space with underscores and lower-case all of the letters in column names
+names(banks) <- names(banks) |> 
+  str_replace_all("\\s", "_") |> 
+  str_to_lower()
 ```
 
 NOTE: Necessary packages for the following code are "mapproj" and "tmap"
 Run: install.packages("mapproj") and install.packages("tmap") if not already loaded
 ```{r}
 
-# replace the white space with underscores and lower-case all of the letters in column names
-names(banks) <- names(banks) |> 
-  str_replace_all("\\s", "_") |> 
-  str_to_lower()
 #filter the data to rows about banks that have valid longitudes and latitudes
 banks_locations <- banks |>
   filter(!is.na(longitude), !is.na(latitude))
@@ -146,7 +142,7 @@ banks_locations <- st_as_sf(banks, coords = c("longitude", "latitude"))
 banks_locations <- st_set_crs(banks_locations, value = 4326)
 #check the CRS
 st_crs(banks_locations)
-#plot map usinggit  ggplot2
+#plot map using ggplot2
 
 library(mapproj)
 banks_locations |>
@@ -164,7 +160,6 @@ banks_join <- st_join(DMV_tracts, banks_locations, st_intersects)
 
 
 #trying to plot bank locations over a map of the census tracts 
-
 
 library(tmap)
 tm_shape(DMV_tracts) +
@@ -191,7 +186,7 @@ banks_join %>%
 
 # trying to create a choropleth and it is not working lol
 banks_merged <- banks_join %>%
-  group_by(name10) %>%
+  group_by(NAME10) %>%
   mutate(n = n()) %>%
   ungroup()
   
@@ -214,7 +209,7 @@ p1
 
 # attempt 2
 banks_merged_try <- banks_join %>%
-  group_by(name10) %>%
+  group_by(NAME10) %>%
   mutate(n = n()) %>%
   ungroup()
 
@@ -377,7 +372,7 @@ leaflet(debt_tract_2) %>%
 
 
 ```{r}
-#Merged CDC Places dataset with census tracts and made graph and chloropleths
+#Merged CDC Places dataset with census tracts and made graph and choropleths
 
 #Read in CSV of CDC data
 Health <- read_csv("PLACES.csv")
@@ -638,4 +633,72 @@ prediction_table <- tibble(test_predictions$Data_Value, test_predictions$.pred)
 
 ```
 
+```{r}
+# Cluster Analysis? 
+# ATTEMPT
 
+library(tidyclust)
+
+debt_pca_rec <- recipe(~ ., data = debt_to_income) %>%
+    step_pca(all_numeric(), num_comp = 3) %>%
+    prep(data = debt_to_income) %>%
+    bake(new_data = debt_to_income) %>%
+    select(PC1, PC2)
+
+viz_1 <- debt_pca_rec %>%
+  ggplot() +
+  geom_point(
+    mapping = aes(x = PC1, y = PC2),
+    alpha = 0.5
+  ) +
+  theme_minimal()
+
+viz_1 
+
+
+#create the function 
+debt_pca_fun<- function(DTI, df){
+  debt_pca<- df %>%
+    replace(is.na(.), 0) %>%
+    filter(DTI_ratio == DTI) 
+  
+debt_pca_rec <- recipe(~ ., data = debt_to_income) %>%
+    step_pca(all_numeric(), num_comp = 3) %>%
+    prep(data = debt_to_income) %>%
+    bake(new_data = debt_to_income) %>%
+    select(PC1, PC2)
+    
+
+kmeans_rec<- recipe(~ ., data = debt_to_income) %>%
+  step_select(all_numeric())
+  
+  debt_pca_spec <- k_means(
+  num_clusters = 4
+) %>%
+  set_engine("stats", nstart = 100)
+
+debt_pca_workflow <- workflow(
+  preprocessor = kmeans_rec, 
+  spec = debt_pca_spec
+)
+
+final_fit <- debt_pca_workflow %>%
+  fit(data = debt_to_income)
+
+debt_clusters <- 
+  bind_cols(debt_to_income, debt_pca_rec, cluster = final_fit %>%
+    extract_cluster_assignment() %>%
+    pull(.cluster) )
+
+return(debt_clusters)
+}
+
+#lastly, mapping the output
+DTI<- 1:100
+set.seed(20220413)
+final_result <- map_dfr(.x = DTI, .f = debt_pca_fun, df = debt_to_income)
+print(final_result)
+  
+
+
+```
