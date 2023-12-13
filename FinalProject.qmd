@@ -224,6 +224,39 @@ banks_merged_try %>%
 
 ```
 
+
+```{r}
+
+#looking at public health outcomes in relationship to distance to banks 
+
+banking<- st_transform(banks_join, crs = 4326)
+DC<- st_transform(DC_tracts, crs = 4326)
+
+healthyy <- st_as_sf(Health2, coords = c("longitude", "latitude"))
+healthyy <- st_set_crs(healthyy, value = 4326)
+healthyy<- st_transform(healthyy, crs = 4326)
+
+#Filter depression
+healthyy <- healthyy %>%
+  filter(short_question_text %in% c("Depression",	"Cancer (except skin)"))
+      
+
+#transforming so it matches for the spatial join
+banks_filtered<- st_join(banking, DC, left= FALSE)
+
+
+banks_health<- st_join(healthyy, st_buffer(banks_filtered, dist = 400))
+
+
+max_banks<- banks_health %>%
+  filter(short_question_text %in% "Depression") %>%
+  group_by(NAME10.x) %>%
+  summarize(n = n())
+view(max_banks)
+
+
+```
+
 ```{r}
 # loading debt to income ratio data
 
