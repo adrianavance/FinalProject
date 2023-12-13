@@ -631,9 +631,8 @@ metrics(test_predictions, truth = Data_Value, estimate = .pred)
 prediction_table <- tibble(test_predictions$Data_Value, test_predictions$.pred)
 
 ```
-
+# Cluster Analysis
 ```{r}
-# Cluster Analysis? 
 # ATTEMPT
 
 library(tidyclust)
