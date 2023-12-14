@@ -100,9 +100,6 @@ Health_map <- Health %>%
   st_as_sf(wkt = "Geolocation", remove = FALSE) %>%
   st_set_crs(value = 4326) # setting CRS
 
-Health_map <- st_transform(Health_map, crs = st_crs(DMV_tracts))
-
-Health_map <- st_join(DMV_tracts, Health_map, st_intersects) 
 
 # Map health outcomes
 Health_map %>%
@@ -182,10 +179,11 @@ debt_to_income %>%
   ggplot() + 
   geom_hex(mapping = aes(x = percent_minority, y = note_amount)) +
     scale_fill_continuous(low = "darkgreen", high = "yellow") + 
-  scale_y_continuous()
+  scale_y_continuous() 
+
 
 ```
-This hexbin plot demonstrates that the greatest concentration of loans is among the $300,000 amount in 30-40% minority census tracts. 
+This hexbin plot demonstrates that there is a concentration of loans among the 300,000 dollar amount in 30-40% minority census tracts. There is also a significant concentration of single family home loans in the near-100% minority census tracts, but we can see that the loans trend much lower for minority census tracts, closer to 100,000 dollars.
 
 ### Loading and cleaning banks dataset
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
@@ -364,6 +362,9 @@ banking<- st_transform(banks_join, crs = 4326)
 DC<- st_transform(DC_tracts, crs = 4326)
 
 st_transform(Health_map, crs = 4326)
+Health_map <- st_transform(Health_map, crs = st_crs(DMV_tracts))
+Health_map <- st_join(DMV_tracts, Health_map, st_intersects) 
+
 
 Health_DC <- Health_map %>%
   filter(COUNTYFP10 == "001") %>%
@@ -456,6 +457,7 @@ p3
 ```
 
 This geospatial visualization demonstrates the range of debt-to-income ratios by census tract in the DMV. The range of colors provides a visualization of the range, but it would be helpful to know the averages for each census tract. 
+
 ### Using Leaflet to create an interactive map of debt to income ratios in the DMV
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 
@@ -654,6 +656,7 @@ lasso_fit %>%
 # The RMSE of this model's best fit is around 22. 
 
 ```
+For our first attempt at a machine learning model we used the debt-to-income ratio dataset to predict percent minority census tracts. While tuning was used to refine the parameters of the lasso model, the RMSE was still 22
 
 ### Machine Learning Model #2: Predicting rates of depression in a census tract using economic predictors from the debt-to-income dataset
 
