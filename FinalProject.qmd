@@ -1,5 +1,6 @@
 ---
-title: "Final Project"
+title: "Data Science for Public Policy Final Project"
+subtitle: "Examining the Relationship Between Economic Status and Public Health Outcomes in the D.C. Area"
 author: "Adriana Vance, Kyle Kim, Elena Koshkin, Kamiryn Rose"
 execute:
   warning: false
@@ -7,8 +8,7 @@ format:
   html:
     embed-resources: true
 ---
-
-```{r echo = false, message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE}
 library(httr)
 library(jsonlite)
 library(tidyverse)
@@ -16,8 +16,14 @@ library(tidycensus)
 library(purrr)
 library(sf)
 library(dplyr)
+library(patchwork)
+library(recipes)
+library(ggplot2)
+library(tidyclust)
+```
 
-
+## Part 01
+```{r echo = false, message=FALSE, warning=FALSE}
 #Read in CSV of CDC data
 Health <- read_csv("PLACES.csv")
 
