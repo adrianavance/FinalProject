@@ -20,6 +20,12 @@ library(patchwork)
 library(recipes)
 library(ggplot2)
 library(tidyclust)
+library(tigris)
+library(broom)
+library(factoextra)
+library(tmap)
+library(mapproj)
+library(leaflet)
 ```
 
 ## Part 01
@@ -82,7 +88,7 @@ All_states <- bind_rows(DC, MD, VA)
 
 ```
 
-This code is performing tasks related to loading and exploring public health and demographic data, focusing on specific health measures and ACS variables for the DMV area.
+This is loading and exploring public health and demographic data, focusing on specific health measures and ACS variables for the DMV area.
 
 #### Health Outcomes Distribution Map
 
@@ -105,9 +111,10 @@ Health_map %>%
   )
 
 ```
+## Part 02
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 
-```{r}
-library(tigris) 
+#pulling tigris package tracts data
 
 Maryland_tracts <- tracts(
 state = "MD",
@@ -133,7 +140,7 @@ DMV_tracts<- rbind_tigris(DC_tracts, Virginia_tracts, Maryland_tracts)
 
 ```
 
-```{r}
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 #loading banks data 
 banks <- read.csv("banks.csv")
 
@@ -145,33 +152,39 @@ names(banks) <- names(banks) |>
 
 NOTE: Necessary packages for the following code are "mapproj" and "tmap"
 Run: install.packages("mapproj") and install.packages("tmap") if not already loaded
-```{r}
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 
 #filter the data to rows about banks that have valid longitudes and latitudes
 banks_locations <- banks |>
   filter(!is.na(longitude), !is.na(latitude))
 #convert longitude and latitude columns into spatial geometries
-banks_locations <- st_as_sf(banks, coords = c("longitude", "latitude"))
+banks_locations <- st_as_sf(banks_locations, coords = c("longitude", "latitude"))
 #set CRS to 4326 (WGS 84)
 banks_locations <- st_set_crs(banks_locations, value = 4326)
 #check the CRS
 st_crs(banks_locations)
-#plot map using ggplot2
 
-library(mapproj)
+#plot map using ggplot2
 banks_locations |>
   ggplot() +
   geom_sf(
-    aes(color = ward), alpha = 0.4, size = 2) + 
-  coord_sf()
+    aes(color = name), alpha = 0.4, size = 2)
+
 
 # spatial join and census tracts 
 #match CRS of both objects using the given CRS: 4326
-banks_locations <- st_transform(banks_locations, crs = st_crs(DMV_tracts))
+banks_chloro <- st_transform(banks_locations, crs = st_crs(DMV_tracts))
 
 #spatial join bank points and census tracts
-banks_join <- st_join(DMV_tracts, banks_locations, st_intersects) 
+banks_join <- st_join(DMV_tracts, banks_chloro, st_intersects) 
 
+banks_merged_1 <- banks_join %>%
+  group_by(GEOID10) %>%
+  summarize(
+    bank_count = sum(!is.na(name), na.rm = TRUE))
+
+#join census tract back to new dataframe
+banks_merged_1 <- st_join(DMV_tracts, banks_merged_1, join = st_intersects)
 
 #trying to plot bank locations over a map of the census tracts 
 
@@ -193,10 +206,24 @@ banks_join %>%
   ggplot()+ 
   geom_sf(data = DC_tracts) + 
   geom_sf(data = banks_locations, aes(color = ward)) 
+
+#chloropleth
+
+banks_merged_2 <- banks_merged_1 |>
+  select(geometry, bank_count)
+
+p1 <- banks_merged_2 %>%
+  ggplot() +
+  geom_sf(aes(fill = log1p(bank_count)), color = "white", size = 0.1) +
+  scale_fill_gradient(low = "#81FFEF", high = "#F067B4", na.value = "white") +
+  labs(fill = "Log(Bank Count)") +
+  theme_void()
+
+p1
   
 ```
 # Banks Choropleth
-```{r}
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 
 # trying to create a choropleth and it is not working lol
 banks_merged <- banks_join %>%
@@ -234,7 +261,7 @@ banks_merged_try %>%
 ```
 
 # Geospatial Analysis
-```{r}
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 
 # looking at economic outcomes in relationship to distance to banks 
 banking<- st_transform(banks_join, crs = 4326)
@@ -281,7 +308,7 @@ view(max_banks)
 
 ```
 
-```{r}
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 # loading debt to income ratio data
 
 debt_to_income <- read.table("debt_to_income.txt", header = FALSE) 
@@ -291,7 +318,6 @@ colnames(debt_to_income) <- c('enterprise', 'record_num','state_postal_code', 'M
 
 counties <- c(1, 59, 31, 33) # Name county vector to filter dataset to needed counties only 
 
-library(dplyr)
 debt_to_income <- debt_to_income %>%
   filter(MSA == 47900) 
 
@@ -341,17 +367,27 @@ debt_tract_2 <- st_transform(debt_tract_2, crs = 4326)
 st_crs(debt_tract_2)
 
 # Debt-to-income ratio Choropleth
-debt_tract_2 %>%
+p3 <- debt_tract_2 %>%
   ggplot() + 
-  geom_sf(aes(fill = DTI_ratio)) +
+  geom_sf(
+    aes(
+      fill = DTI_ratio), color = "White", size = 0.1) +
+  scale_fill_gradient(
+    low = "#81FFEF",
+    high = "#F067B4",
+    na.value = "white"
+  ) +
+  labs(
+    fill = "Debt to Income Ratio"
+  ) +
   theme_void()
 
+p3
 
 ```
 
-
 ### Using Leaflet to create an interactive map of debt to income ratios in the DMV
-```{r}
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 
 # Load required libraries
 library(leaflet)
@@ -385,14 +421,14 @@ leaflet(debt_tract_2) %>%
 ```
 
 
-```{r}
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 #Merged CDC Places dataset with census tracts and made graph and choropleths
 
 #Read in CSV of CDC data
-Health <- read_csv("PLACES.csv")
+Health1 <- read_csv("PLACES.csv")
 
 #Clean data and get long and lat columns
-Health2 <- Health %>%
+Health2 <- Health1 %>%
   separate(col = Geolocation, into = c("point", "coordinates"), sep = " ", extra = "merge", remove = FALSE) |>
   separate(col = coordinates, into = c("longitude", "latitude"), sep = " ", remove = TRUE)
 
@@ -403,110 +439,71 @@ Health2 <- Health2 %>%
 names(Health2) <- names(Health2) |> 
   str_to_lower()
 
-#Filter depression
-depression_cancer <- Health2 |>
-  filter(short_question_text %in% c("Depression",	"Cancer (except skin)"), !is.na(longitude), !is.na(latitude))
+#Use consistent health measures: CASTHMA, CHD, Depression, Diabetes, Stroke
+
+Health3 <- Health2 %>%
+  filter(measureid %in% c("CASTHMA", "CHD", "DIABETES", "STROKE", "DEPRESSION") &
+           complete.cases(longitude, latitude))
 
 #convert longitude and latitude columns into spatial geometries
-sf_depression <- st_as_sf(depression_cancer, coords = c("longitude", "latitude"))
+sf_Health <- st_as_sf(Health3, coords = c("longitude", "latitude"))
 #set CRS to 4326 (WGS 84)
-sf_depression <- st_set_crs(sf_depression, value = 4326)
+sf_Health <- st_set_crs(sf_Health, value = 4326)
 #check the CRS
-st_crs(sf_depression)
+st_crs(sf_Health)
 
 #plot map using ggplot2
-sf_depression |>
+sf_Health |>
   ggplot() +
   geom_sf(
     aes(color = short_question_text), alpha = 0.4, size = 2) +
-  scale_color_manual(values = c("orange", "darkgreen"), labels = c("Cancer", "Depression")) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-#Load Census Tracts, Perform a Spatial Join, and Create Choropleth
+#Perform a Spatial Join and Create Choropleth
 
-Maryland_tracts <- tracts(
-  state = "MD",
-  county = c("Montgomery"),
-  cb = FALSE,
-  resolution = "500k",
-  year = 2010)
-
-Virginia_tracts <- tracts(
-  state = "VA",
-  county = "Fairfax County",
-  resolution = "500k", 
-  year = 2010
-)
-
-DC_tracts <- tracts(
-  state = "DC",
-  resolution = "500k",
-  year = 2010
-)
-
-DMV_tracts<- rbind_tigris(DC_tracts, Virginia_tracts, Maryland_tracts) 
-
-names(DMV_tracts) <- names(DMV_tracts) |> 
-  str_to_lower()
-
-
-st_crs(DMV_tracts)
 #match cRS
-sf_depression <- st_transform(sf_depression, crs = st_crs(DMV_tracts))
+sf_Health2 <- st_transform(sf_Health, crs = st_crs(DMV_tracts))
 
 #spatial_join health points and census tracts
-Health_join <- st_join(sf_depression, DMV_tracts, st_intersects)
+Health_join <- st_join(sf_Health2, DMV_tracts, st_intersects)
 
 #calculate the count of cancer and depression in new dataframe
 health_merged <- Health_join |>
-  group_by(name10) |>
-  summarize(
-    depression_count = sum(short_question_text == "Depression"),
-    cancer_count = sum(short_question_text == "Cancer (except skin)")
+  group_by(NAME10) |>
+  mutate(
+    calculated_value = totalpopulation * (data_value / 100)
   )
 
 #join census tract back to new dataframe
-health_merged2 <- st_join(tracts1, health_merged, join = st_intersects)
+health_merged2 <- st_join(DMV_tracts, health_merged, join = st_intersects)
 
 #create choropleth maps
-map1 <- health_merged2 |>
+p4 <- health_merged |>
   ggplot() +
   geom_sf(
     aes(
-      fill = cancer_count), color = "white", size = 0.1) +
+      fill = calculated_value), color = "white", size = 0.1) +
   scale_fill_gradient(
-    low = "#90ee90", 
+    low = "#81FFEF", 
     high = "#F067B4",
     na.value = "white"
   ) +
   labs(
-    fill = "count") +
+    fill = "Health Measures Count") +
   theme_void()
 
-map2 <- health_merged2 |>
-  ggplot() +
-  geom_sf(
-    aes(
-      fill = depression_count), color = "white", size = 0.1) +
-  scale_fill_gradient(
-    low = "#90ee90", 
-    high = "#F067B4",
-    na.value = "white"
-  ) +
-  labs(
-    fill = "count") +
-  theme_void()
-library(patchwork)
-map1 + map2
+p4
+
+combined_plot <- p3 + p4
+
+combined_plot
 
 ```
 
 #### Merging Health and Debt-to-Income dataset
-```{r}
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 
 #Merging health dataset with debt_tract_2 
-
-library(sf)
 
 #Converting long and lat coordinates to sf objects
 debt_tract_2_sf <- st_as_sf(debt_tract_2, coords = c("INTPTLON10", "INTPTLAT10"), crs = 4326)
@@ -535,7 +532,7 @@ health_debt <- st_join(debt_tract_2_sf, Health_sf, join = st_intersects)
 
 #### Machine Learning Model 
 
-```{r}
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 library(tidymodels)
 set.seed(102102938)
 
@@ -549,7 +546,7 @@ debt_test <- testing(x = split)
 ```
 
 ### Machine Learning Model #1: Predicting percentage of minorities in a census tract using the single family loan data
-```{r}
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 
 debt_rec <- recipe(percent_minority ~ borrower_income + borrower_age + borrower_income_ratio + tract_income_ratio + DTI_ratio + interest_rate + note_amount, data = debt_train) %>%
   step_normalize(all_numeric_predictors()) %>%
@@ -590,7 +587,7 @@ lasso_fit %>%
 
 ### Machine Learning Model #2: Predicting rates of depression in a census tract using economic predictors from the debt-to-income dataset
 
-```{r}
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 library(randomForest)
 library(caret)
 library(tidymodels)
@@ -646,11 +643,8 @@ prediction_table <- tibble(test_predictions$Data_Value, test_predictions$.pred)
 
 ```
 # Cluster Analysis
-```{r}
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 # ATTEMPT
-
-library(tidyclust)
-library(broom)
 
 dti_data <- debt_to_income %>%
   select(NAME10, DTI_ratio)
@@ -719,7 +713,7 @@ print(final_result)
 
 ```
 
-```{r}
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 clust_plot <- final_result %>%
   ggplot() +
   geom_point(
@@ -737,8 +731,7 @@ clust_plot
 ```
 
 
-```{r}
-library(factoextra)
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 
 set.seed(20220414)
 fviz_nbclust(
