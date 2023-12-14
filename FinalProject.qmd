@@ -656,9 +656,11 @@ lasso_fit %>%
 # The RMSE of this model's best fit is around 22. 
 
 ```
-FOR KAMIRYN: 'm honestly not sure I'm gonna leave this model in here, so feel free to skip over it when you're doing the write up. If I decide to keep it I will add something about it later. Thanks! However please include the second model (below) 
+FOR KAMIRYN: I'm honestly not sure I'm gonna leave this model in here, so feel free to skip over it when you're doing the write up. If I decide to keep it I will add something about it later. Thanks! However please include the second model (below) 
 
 ### Machine Learning Model #2: Predicting rates of depression in a census tract using economic predictors from the debt-to-income dataset
+
+We've chosen a random forest model to model the relationship between economic factors and depression because random forest models adapt easily to many predictors, and nonlinear relationships. Below, we test two different random forest models and refine one with hyperparameter tuning to get a model with refined predictions of rates of depression in a census tract. 
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 library(randomForest)
@@ -708,7 +710,7 @@ rf_mod3
 
 ```
 
- We used hyperparameter tuning to find the best number of mtrys for the model, and plotted the result. After finding that the best number of mtrys was 32, we added this parameter to the model. As a result, this model shows great improvement from the previous, explaining 99.99% of the variance. We can use this model to predict health outcomes on the testing dataset. 
+We used hyperparameter tuning to find the best number of mtrys for the model, and plotted the result. After finding that the best number of mtrys was 32, we added this parameter to the model. As a result, this model shows great improvement from the previous, explaining 99.99% of the variance. We can use this model to predict health outcomes on the testing dataset. 
 
 ```{r}
 
