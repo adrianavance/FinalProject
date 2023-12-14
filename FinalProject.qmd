@@ -73,7 +73,8 @@ DMV_tracts<- rbind_tigris(DC_tracts, Virginia_tracts, Maryland_tracts)
 ```
 
 ### Health Outcomes Data
-The CDC PLACES dataset maps different types of chronic diseases locally throughout the entire United States. These include estimations of the rates of various chronic conditions by census tract level. The CDC PLACES data was downloaded from the CDC website, and only data from DC, Maryland, and Virginia were manually selected. Please download the csv file provided, "PLACES.csv" to load the correct dataframe. 
+The CDC PLACES dataset uses small-area estimation methods to provide model-based mapping of 36 different chronic disease-related measures throughout the United States. These measures include 13 health outcomes, 9 prevention practices, 4 health risk behaviors, 7 disabilities, 3 health statuses, used to estimate the rates of various chronic conditions by census tract level. The CDC PLACES data was downloaded from the CDC website and sifted to select data from exclusively DC, Maryland, and Virginia. Please download the CSV file provided, "PLACES.csv", to load the correct dataframe. 
+
 ```{r echo = false, message=FALSE, warning=FALSE}
 #Read in CSV of CDC data
 Health <- read_csv("PLACES.csv")
