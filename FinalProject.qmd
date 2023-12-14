@@ -656,7 +656,7 @@ lasso_fit %>%
 # The RMSE of this model's best fit is around 22. 
 
 ```
-For our first attempt at a machine learning model we used the debt-to-income ratio dataset to predict percent minority census tracts. While tuning was used to refine the parameters of the lasso model, the RMSE was still 22
+FOR KAMIRYN: 'm honestly not sure I'm gonna leave this model in here, so feel free to skip over it when you're doing the write up. If I decide to keep it I will add something about it later. Thanks! However please include the second model (below) 
 
 ### Machine Learning Model #2: Predicting rates of depression in a census tract using economic predictors from the debt-to-income dataset
 
@@ -689,8 +689,13 @@ depression_test2 <- testing(x = split2)
 rf_mod <- randomForest(Data_Value ~ borrower_income + borrower_age + borrower_income_ratio + tract_income_ratio + DTI_ratio + interest_rate + note_amount + property_value + percent_minority, data = depression_train2)
 
 rf_mod 
-# This model only explains about 77.6% of the variance. After filtering out observations that are not interpretable by RF modeling, we will try a random forest model with all predictors
 
+```
+This model only explains about 77.6% of the variance in the rates of depression in each census tract. We think this is because there is a lack of tuning the model, and because we limited the number of predictors such that there was not enough information. 
+
+After filtering out observations that are not interpretable by RF modeling, we will try a random forest model with all predictors
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 # Trying some tuning to see if we can find the best amount of mtrys to use for the model
 bestmtry <- tuneRF(depression_train2,depression_train2$Data_Value,stepFactor = 2, improve = 0.01, trace = TRUE, plot = T, doBest = TRUE) 
 
@@ -700,7 +705,12 @@ best_mtry <- 32
 rf_mod3 <- randomForest(Data_Value ~., data = depression_train2, mtry = best_mtry)
 
 rf_mod3
-# This model shows great improvement from the previous, explaining 99.99% of the variance. We can use this model to predict health outcomes on the testing dataset. 
+
+```
+
+ We used hyperparameter tuning to find the best number of mtrys for the model, and plotted the result. After finding that the best number of mtrys was 32, we added this parameter to the model. As a result, this model shows great improvement from the previous, explaining 99.99% of the variance. We can use this model to predict health outcomes on the testing dataset. 
+
+```{r}
 
 predicted_values <- predict(rf_mod3, newdata = depression_test2, type = "class")
 
@@ -713,8 +723,13 @@ test_predictions <- test_predictions %>%
 metrics(test_predictions, truth = Data_Value, estimate = .pred)
 
 prediction_table <- tibble(test_predictions$Data_Value, test_predictions$.pred)
-
 ```
+The prediction table shows that we have successfully trained a model that predicts 99% of the variance in our variable of interest, which reflects the rates of depression in each census tract. 
+
+This model used predictors such as percent minority census tracts, debt to income ratio, median income of a census tract, and many other racial and economic factors in the data to be able to predict the depression rates in a census tract. 
+
+Using a machine learning model that adapts to non-linear relationships has shown us that there is indeed a relationship between economic/racial factors and public health outcomes, such as depression. 
+
 # Cluster Analysis
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 # ATTEMPT
