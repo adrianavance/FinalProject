@@ -8,6 +8,9 @@ format:
   html:
     embed-resources: true
 ---
+
+## Data Wrangling and Exploratory Data Analysis
+
 ```{r message=FALSE, warning=FALSE}
 library(httr)
 library(jsonlite)
@@ -28,90 +31,9 @@ library(mapproj)
 library(leaflet)
 ```
 
-## Part 01
-```{r echo = false, message=FALSE, warning=FALSE}
-#Read in CSV of CDC data
-Health <- read_csv("PLACES.csv")
+#### Pulling geospatial data for mapping purposes 
+Loading Tigris Shapefiles from census year that matches our health and economic data. These shapefiles will come in handy when mapping health outcomes and economic data later in the project. 
 
-# Look at types of health outcome measures
-Measures <- Health %>%
-  group_by(Measure) %>%
-  summarize(n = n())
-
-MeasureIDs <- Health %>%
-  group_by(MeasureId) %>%
-  summarize(n = n())
-
-# We want to look for current rates of asthma, heart disease, diabetes, stroke, and depression
-Health <- Health %>%
-  filter(
-    MeasureId == "CASTHMA" |
-      MeasureId == "CHD" |
-      MeasureId == "DIABETES" |
-      MeasureId == "STROKE" |
-      MeasureId == "DEPRESSION")
-
-ACSData <- load_variables(2021, "acs5") #browse to find variables
-      
-# Loading ACS Data (not working right now)
-my_vars <- c(median_cost_ratio = "B25071_001E")
-
-
-DC <- get_acs(geography = "tract",
-                     variables = my_vars,
-                     state = "DC", 
-                     output = "wide",
-                     survey = "acs5",
-                     year = 2021,
-                     geometry = TRUE)
-
-MD <- get_acs(geography = "tract",
-                     variables = my_vars,
-                     state = "MD",
-                     county = c("Montgomery", "Prince George's"),
-                     output = "wide",
-                     survey = "acs5",
-                     year = 2021,
-                     geometry = TRUE)
-
-VA <- get_acs(geography = "tract",
-                     variables = my_vars,
-                     state = "VA",
-                     county = "Fairfax County",
-                     output = "wide",
-                     survey = "acs5",
-                     year = 2021,
-                     geometry = TRUE)
-
-All_states <- bind_rows(DC, MD, VA)
-
-
-```
-
-This is loading and exploring public health and demographic data, focusing on specific health measures and ACS variables for the DMV area.
-
-#### Health Outcomes Distribution Map
-
-```{r}
-# Change geometry to be readable by SF
-
-Health_map <- Health %>%
-  st_as_sf(wkt = "Geolocation", remove = FALSE) %>%
-  st_set_crs(value = 4326) # setting CRS
-
-# Map health outcomes
-Health_map %>%
-  ggplot() +
-  geom_sf(aes(color = MeasureId)) +
-  labs(
-    title = "Health Outcomes DMV Map",
-    subtitle = "Distribution of Health Measures",
-    caption = "CASTHMA = Current Asthma\nCHD = Coronary Heart Disease",
-    color = "Health Measures ID"
-  )
-
-```
-## Part 02
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 
 #pulling tigris package tracts data
@@ -139,6 +61,66 @@ DC_tracts <- tracts(
 DMV_tracts<- rbind_tigris(DC_tracts, Virginia_tracts, Maryland_tracts)
 
 ```
+
+### Health Outcomes Data
+Loading, cleaning and performing EDA for health outcomes data.
+```{r echo = false, message=FALSE, warning=FALSE}
+#Read in CSV of CDC data
+Health <- read_csv("PLACES.csv")
+
+# Look at types of health outcome measures
+Measures <- Health %>%
+  group_by(Measure) %>%
+  summarize(n = n())
+
+MeasureIDs <- Health %>%
+  group_by(MeasureId) %>%
+  summarize(n = n())
+
+# We want to look for current rates of asthma, heart disease, diabetes, stroke, and depression
+Health <- Health %>%
+  filter(
+    MeasureId == "CASTHMA" |
+      MeasureId == "CHD" |
+      MeasureId == "DIABETES" |
+      MeasureId == "STROKE" |
+      MeasureId == "DEPRESSION")
+
+```
+
+This is loading and exploring public health outcomes data, focusing on specific health measures for the DMV area. We chose asthma, coronary heart disease, stroke, and depression because research shows a strong connection between these conditions and economic status. 
+
+#### Health Outcomes Distribution Map
+
+```{r}
+# Change geometry to be readable by SF
+
+Health_map <- Health %>%
+  st_as_sf(wkt = "Geolocation", remove = FALSE) %>%
+  st_set_crs(value = 4326) # setting CRS
+
+Health_map <- st_transform(Health_map, crs = st_crs(DMV_tracts))
+
+Health_map <- st_join(DMV_tracts, Health_map, st_intersects) 
+
+
+# Map health outcomes
+Health_map %>%
+  ggplot() +
+  geom_sf(data = DMV_tracts) +
+  geom_sf(aes(color = MeasureId)) +
+  labs(
+    title = "Health Outcomes in the DMV",
+    subtitle = "Distribution by Census Tract",
+    caption = "CASTHMA = Current Asthma\nCHD = Coronary Heart Disease",
+    color = "Health Measures ID"
+  )
+
+```
+
+This map demonstrates that at least one of the health outcomes we selected are present in each census tracts in our dataset. Later in the project, we intend to delve further into the data to understand how common different health outcomes are in each census tract. 
+
+
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 #loading banks data 
