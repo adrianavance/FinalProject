@@ -488,7 +488,7 @@ health_merged2 <- st_join(DMV_tracts, health_merged, join = st_intersects)
 
 #create choropleth maps
 p4 <- health_merged |>
-  ggplot() +
+  ggplot() + geom_sf(data = DMV_tracts) +
   geom_sf(
     aes(
       fill = calculated_value), color = "white", size = 0.1) +
@@ -657,6 +657,12 @@ prediction_table <- tibble(test_predictions$Data_Value, test_predictions$.pred)
 
 dti_data <- debt_to_income %>%
   select(NAME10, DTI_ratio)
+
+#change NAME10 to categorical here
+
+#maybe instead of NAME10 use percent_minority 
+
+#try something that is less continuous, and has more discrete categories like county 
 
 dti_pca_rec <- recipe(~ ., data = dti_data) %>%
   step_pca(all_numeric(), id = "pca") %>%
