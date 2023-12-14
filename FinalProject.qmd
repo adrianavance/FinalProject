@@ -82,7 +82,9 @@ All_states <- bind_rows(DC, MD, VA)
 
 ```
 
-#### Playing around w mapping
+This code is performing tasks related to loading and exploring public health and demographic data, focusing on specific health measures and ACS variables for the DMV area.
+
+#### Health Outcomes Distribution Map
 
 ```{r}
 # Change geometry to be readable by SF
@@ -94,7 +96,13 @@ Health_map <- Health %>%
 # Map health outcomes
 Health_map %>%
   ggplot() +
-  geom_sf(aes(color = MeasureId))
+  geom_sf(aes(color = MeasureId)) +
+  labs(
+    title = "Health Outcomes DMV Map",
+    subtitle = "Distribution of Health Measures",
+    caption = "CASTHMA = Current Asthma\nCHD = Coronary Heart Disease",
+    color = "Health Measures ID"
+  )
 
 ```
 
