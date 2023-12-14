@@ -26,9 +26,13 @@ library(factoextra)
 library(tmap)
 library(mapproj)
 library(leaflet)
+library(randomForest)
+library(caret)
+library(tidymodels)
 ```
 
 ## Part 01
+### Data Wrangling and Plots
 ```{r echo = false, message=FALSE, warning=FALSE}
 #Read in CSV of CDC data
 Health <- read_csv("PLACES.csv")
