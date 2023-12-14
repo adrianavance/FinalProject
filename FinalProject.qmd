@@ -482,11 +482,11 @@ health_merged <- Health_join |>
 health_merged2 <- st_join(DMV_tracts, health_merged, join = st_intersects)
 
 #create choropleth maps
-p4 <- health_merged |>
+p4 <- health_merged2 |>
   ggplot() +
   geom_sf(
     aes(
-      fill = calculated_value), color = "white", size = 0.1) +
+      fill = calculated_value), color = "blue", size = 0.1) +
   scale_fill_gradient(
     low = "#81FFEF", 
     high = "#F067B4",
@@ -592,11 +592,8 @@ lasso_fit %>%
 ### Machine Learning Model #2: Predicting rates of depression in a census tract using economic predictors from the debt-to-income dataset
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
-library(randomForest)
-library(caret)
-library(tidymodels)
-# Filtering dataset for second machine learning  model 
 
+# Filtering dataset for second machine learning  model
 
 # We want only observations for rates of depression, and to exclude columns that have all values as NA or that are not interpretable by random forest modeling
 depression_debt <- health_debt %>%
@@ -607,7 +604,6 @@ depression_debt <- health_debt %>%
 
 # Omit all NA values from dataset
 depression_debt <- na.omit(depression_debt)
-
 
 set.seed(12122023)
 split2 <- initial_split(data = depression_debt, prop = 0.8)
