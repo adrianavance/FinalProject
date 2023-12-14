@@ -11,6 +11,7 @@ format:
 
 ## Data Wrangling and Exploratory Data Analysis
 
+Loading necessary packages
 ```{r message=FALSE, warning=FALSE}
 library(httr)
 library(jsonlite)
@@ -88,7 +89,7 @@ Health <- Health %>%
 
 ```
 
-This is loading and exploring public health outcomes data, focusing on specific health measures for the DMV area. We chose asthma, coronary heart disease, stroke, and depression because research shows a strong connection between these conditions and economic status. 
+We chose asthma, coronary heart disease, stroke, and depression as our health outcomes of interest because research shows a strong connection between these conditions and economic status. The most useful observations from this dataset will be MeasureId, which is the type of health outcome, and Data_Value, which is the percentage of the total population of a given census tract that report said health outcome. 
 
 #### Health Outcomes Distribution Map
 
@@ -101,8 +102,8 @@ Health_map <- Health %>%
 
 Health_map <- st_transform(Health_map, crs = st_crs(DMV_tracts))
 
-Health_map <- st_join(DMV_tracts, Health_map, st_intersects) 
 
+Health_map <- st_join(DMV_tracts, Health_map, st_intersects) 
 
 # Map health outcomes
 Health_map %>%
@@ -117,11 +118,76 @@ Health_map %>%
   )
 
 ```
-
 This map demonstrates that at least one of the health outcomes we selected are present in each census tracts in our dataset. Later in the project, we intend to delve further into the data to understand how common different health outcomes are in each census tract. 
 
+### Debt-to-Income Ratio Data
+Loading and cleaning debt to income ratio dataset
 
+```{r echo = FALSE, warning = FALSE, message = FALSE}
+# loading debt to income ratio data
 
+debt_to_income <- read.table("debt_to_income.txt", header = FALSE) 
+# Have to manually name columns
+
+colnames(debt_to_income) <- c('enterprise', 'record_num','state_postal_code', 'MSA', 'COUNTYFP', 'NAME10', 'percent_minority', 'median_income', 'MSA_median_income', 'tract_income_ratio', 'borrower_income','AMI', 'borrower_income_ratio', 'UPB','purpose_of_loan', 'fed_guarantee', 'num_borrowers', 'first_time_borrower', 'borrower_race_1', 'race_2', 'race_3', 'race_4', 'race_5', 'borrower_ethnicity', 'co_borrower_race_1', 'co_race_2', 'co_race_3', 'co_race_4', 'co_race_5',   'co_borrower_ethnicity', 'borrower_gender', 'co_borrower_gender', 'borrower_age', 'co_borrower_age', 'occupancy_code', 'rate_spread', 'HOEPA_status', 'property_type', 'lien_status', 'borrower_over_sixtytwo', 'co_borrower_over_sixtytwo', 'LTV_ratio', 'note_date', 'mortgage_term', 'num_units', 'interest_rate', 'note_amount', 'preapproval', 'application_channel', 'AUS_name', 'borrower_credscore_model', 'co_borrower_credscore_model', 'DTI_ratio', 'discount_points', 'rate_period', 'manufactured_home_ownership', 'property_value', 'rural_tract', 'lower_MS_delta', 'Mid_Appalachia', 'persistent_poverty_county', 'concentrated_poverty', 'high_opportunity_area', 'QOZ')
+
+counties <- c(1, 59, 31, 33) # Name county vector to filter dataset to needed counties only 
+
+debt_to_income <- debt_to_income %>%
+  filter(MSA == 47900) 
+
+debt_to_income <- debt_to_income %>%
+  filter(COUNTYFP == counties) # Filtering to needed counties 
+
+# Mutate dataset to match county names of TIGRIS shapefile
+debt_to_income <- debt_to_income %>%
+  mutate(COUNTYFP = 
+    if_else(COUNTYFP == 1, "001", as.character(COUNTYFP)))
+
+debt_to_income <- debt_to_income %>%
+  mutate(COUNTYFP = 
+           if_else(COUNTYFP == 59, "059", as.character(COUNTYFP)))
+    
+debt_to_income <- debt_to_income %>%
+  mutate(COUNTYFP = 
+           if_else(COUNTYFP == 31, "031", as.character(COUNTYFP)))
+
+debt_to_income <- debt_to_income %>%
+  mutate(COUNTYFP = 
+           if_else(COUNTYFP == 33, "033", as.character(COUNTYFP)))
+```
+The debt-to-income ratio dataset did not come with column names, so we used the data documentation to manually input the names. Some of the column names were changed to match the tigris shapefiles which will be used in later mergers.
+
+### Exploratory Data Analysis using the debt-to-income ratio dataset
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+
+# Exploratory data analysis to better understand the data 
+n <- debt_train %>%
+  summarise(n = n())
+  
+debt_train %>%
+  filter(purpose_of_loan == 3 | 4 | 5 | 6) %>%
+  ggplot() + 
+  geom_bar(mapping = aes(x = purpose_of_loan)) + 
+  scale_x_continuous(breaks = c(1, 2, 3, 4, 5, 6, 7), minor_breaks = NULL, labels = c("Purchase", "Refinancing", " ", "Home Improvement", " ", " ", "Refinancing (cash-out)")) +
+  ggtitle("Count of borrowers by loan type") 
+  
+```
+Here we can see that most of the loans taken out are for the purposes of refinancing a mortgage, while a smaller number are for initial purchase of homes. 
+
+```{r}
+debt_train %>%
+  ggplot() + 
+  geom_hex(mapping = aes(x = percent_minority, y = note_amount)) +
+    scale_fill_continuous(low = "darkgreen", high = "yellow") + 
+  scale_y_continuous()
+
+```
+This hexbin plot demonstrates that the greatest concentration of loans is among the $300,000 amount in 30-40% minority census tracts. 
+
+I am going to pick RMSE as my error metric. Since RMSE squares the errors, outliers will be penalized more. In predicting percent minority census tracts, I think that anything above a 10% difference is too much error. 
+
+### Loading and cleaning banks dataset
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 #loading banks data 
 banks <- read.csv("banks.csv")
@@ -131,18 +197,20 @@ names(banks) <- names(banks) |>
   str_replace_all("\\s", "_") |> 
   str_to_lower()
 ```
+Replacing white space in the dataframe will help to make the dataset more readable with R programs.
 
-NOTE: Necessary packages for the following code are "mapproj" and "tmap"
-Run: install.packages("mapproj") and install.packages("tmap") if not already loaded
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 
 #filter the data to rows about banks that have valid longitudes and latitudes
 banks_locations <- banks |>
   filter(!is.na(longitude), !is.na(latitude))
+
 #convert longitude and latitude columns into spatial geometries
 banks_locations <- st_as_sf(banks_locations, coords = c("longitude", "latitude"))
+
 #set CRS to 4326 (WGS 84)
 banks_locations <- st_set_crs(banks_locations, value = 4326)
+
 #check the CRS
 st_crs(banks_locations)
 
@@ -152,6 +220,11 @@ banks_locations |>
   geom_sf(
     aes(color = name), alpha = 0.4, size = 2)
 
+```
+*** Say something about the locations/density of banks here ***
+
+
+```{r}
 
 # spatial join and census tracts 
 #match CRS of both objects using the given CRS: 4326
@@ -259,78 +332,84 @@ banking<- st_transform(banks_join, crs = 4326)
 DC<- st_transform(DC_tracts, crs = 4326)
 
 econ <- debt_tract_2 %>%
+  filter(COUNTYFP10 == "001") %>%
   st_as_sf(coords = c("INTPTLON10", "INTPTLAT10"), remove = FALSE) %>%
   st_set_crs(value = 4326) # setting CRS
 
 banks_filtered<- st_join(banking, DC, left= FALSE)
 banks_econ<- st_join(econ, st_buffer(banks_filtered, dist = 400))
+
 max_banks_econ<- banks_econ %>%
   group_by(NAME10) %>%
   filter(DTI_ratio > 20) %>%
   summarize(n = n()) 
+
+max_banks_econ %>%
+  ggplot() + 
+  geom_sf(aes(fill = n)) + 
+   scale_fill_gradient(
+    low = "#D1E3F5",
+    high = "blue",
+    na.value = "white"
+  )
+```
+*** Add description about bank/DTI ratio map here ***
+
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 
 #looking at public health outcomes in relationship to distance to banks 
 
 banking<- st_transform(banks_join, crs = 4326)
 DC<- st_transform(DC_tracts, crs = 4326)
 
-healthyy <- st_as_sf(Health2, coords = c("longitude", "latitude"))
-healthyy <- st_set_crs(healthyy, value = 4326)
-healthyy<- st_transform(healthyy, crs = 4326)
+st_transform(Health_map, crs = 4326)
+
+Health_DC <- Health_map %>%
+  filter(COUNTYFP10 == "001") %>%
+  filter(MeasureId == "DEPRESSION")
+
+#healthyy <- st_as_sf(Health2, coords = c("longitude", "latitude"))
+#healthyy <- st_set_crs(healthyy, value = 4326)
+#healthyy<- st_transform(healthyy, crs = 4326)
 
 #Filter depression
-healthyy <- healthyy %>%
-  filter(short_question_text %in% c("Depression","Cancer (except skin)"))
+#healthyy <- healthyy %>%
+ # filter(short_question_text %in% c("Depression"))
       
 
 #transforming so it matches for the spatial join
 banks_filtered<- st_join(banking, DC, left= FALSE)
 
+st_crs(Health_DC)
+banks_filtered <- st_transform(banks_filtered, crs = 4269)
 
-banks_health<- st_join(healthyy, st_buffer(banks_filtered, dist = 400))
+banks_health<- st_join(Health_DC, st_buffer(banks_filtered, dist = 400))
 
 
-max_banks<- banks_health %>%
-  filter(short_question_text %in% "Depression") %>%
+max_banks <- banks_health %>%
   group_by(NAME10.x) %>%
   summarize(n = n())
+
 view(max_banks)
 
+max_banks %>%
+  ggplot() + 
+  geom_sf(data = DC) +
+  geom_sf(aes(fill = n)) + 
+   scale_fill_gradient(
+    low = "#D1E3F5",
+    high = "blue",
+    na.value = "white"
+  )
+  
 
 ```
 
+
+## Creating visualizations from the debt-to-income dataset
+Performing a merge with the tigris shapefiles to map debt-to-income ratios as a choropleth and interactive map
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
-# loading debt to income ratio data
-
-debt_to_income <- read.table("debt_to_income.txt", header = FALSE) 
-# Have to manually name columns
-
-colnames(debt_to_income) <- c('enterprise', 'record_num','state_postal_code', 'MSA', 'COUNTYFP', 'NAME10', 'percent_minority', 'median_income', 'MSA_median_income', 'tract_income_ratio', 'borrower_income','AMI', 'borrower_income_ratio', 'UPB','purpose_of_loan', 'fed_guarantee', 'num_borrowers', 'first_time_borrower', 'borrower_race_1', 'race_2', 'race_3', 'race_4', 'race_5', 'borrower_ethnicity', 'co_borrower_race_1', 'co_race_2', 'co_race_3', 'co_race_4', 'co_race_5',   'co_borrower_ethnicity', 'borrower_gender', 'co_borrower_gender', 'borrower_age', 'co_borrower_age', 'occupancy_code', 'rate_spread', 'HOEPA_status', 'property_type', 'lien_status', 'borrower_over_sixtytwo', 'co_borrower_over_sixtytwo', 'LTV_ratio', 'note_date', 'mortgage_term', 'num_units', 'interest_rate', 'note_amount', 'preapproval', 'application_channel', 'AUS_name', 'borrower_credscore_model', 'co_borrower_credscore_model', 'DTI_ratio', 'discount_points', 'rate_period', 'manufactured_home_ownership', 'property_value', 'rural_tract', 'lower_MS_delta', 'Mid_Appalachia', 'persistent_poverty_county', 'concentrated_poverty', 'high_opportunity_area', 'QOZ')
-
-counties <- c(1, 59, 31, 33) # Name county vector to filter dataset to needed counties only 
-
-debt_to_income <- debt_to_income %>%
-  filter(MSA == 47900) 
-
-debt_to_income <- debt_to_income %>%
-  filter(COUNTYFP == counties) # Filtering to needed counties 
-
-# Mutate dataset to match county names of TIGRIS shapefile
-debt_to_income <- debt_to_income %>%
-  mutate(COUNTYFP = 
-    if_else(COUNTYFP == 1, "001", as.character(COUNTYFP)))
-
-debt_to_income <- debt_to_income %>%
-  mutate(COUNTYFP = 
-           if_else(COUNTYFP == 59, "059", as.character(COUNTYFP)))
-    
-debt_to_income <- debt_to_income %>%
-  mutate(COUNTYFP = 
-           if_else(COUNTYFP == 31, "031", as.character(COUNTYFP)))
-
-debt_to_income <- debt_to_income %>%
-  mutate(COUNTYFP = 
-           if_else(COUNTYFP == 33, "033", as.character(COUNTYFP)))
 
 debt_to_income$NAME10 <- as.numeric(debt_to_income$NAME10)
 
@@ -377,6 +456,8 @@ p3
 
 ```
 
+This geospatial visualization demonstrates the range of debt-to-income ratios by census tract in the DMV.
+
 ### Using Leaflet to create an interactive map of debt to income ratios in the DMV
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 
@@ -408,10 +489,10 @@ leaflet(debt_tract_2) %>%
     opacity = 1
   )
 
-
 ```
+This map demonstrates the differences between the debt-to-income ratio for single family home purchases in the DMV area. 
 
-
+## Visualizations of health outcomes in the DMV area
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 #Merged CDC Places dataset with census tracts and made graph and choropleths
 
