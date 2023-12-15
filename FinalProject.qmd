@@ -175,6 +175,27 @@ debt_to_income <- debt_to_income %>%
 debt_to_income <- debt_to_income %>%
   mutate(COUNTYFP = 
            if_else(COUNTYFP == 33, "033", as.character(COUNTYFP)))
+
+debt_to_income$NAME10 <- as.numeric(debt_to_income$NAME10)
+
+DMV_tracts$NAME10 <- as.numeric(DMV_tracts$NAME10)
+
+debt_to_income$NAME10 <- debt_to_income$NAME10 / 100
+
+#Merging the datasets by census tract name
+debt_tract_2 <- full_join(DMV_tracts, debt_to_income, by = "NAME10")
+
+# Setting CRS for geospatial visualizations 
+
+debt_tract_2 <- debt_tract_2 %>%
+  st_as_sf(coords = c("INTPTLON10", "INTPTLAT10"), remove = FALSE) %>%
+  st_set_crs(value = 4326) # setting CRS
+
+st_crs(debt_tract_2) # Checking CRS
+
+debt_tract_2 <- st_transform(debt_tract_2, crs = 4326)
+
+st_crs(debt_tract_2)
 ```
 The debt-to-income ratio dataset did not come with column names, so we used the data documentation to manually input the names. Some of the column names were changed to match the tigris shapefiles which will be used in later mergers.
 
@@ -404,30 +425,7 @@ Banks_Depression_400 + Banks_Depression_1600
 Performing a merge with the tigris shapefiles to map debt-to-income ratios as a choropleth and interactive map
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 
-debt_to_income$NAME10 <- as.numeric(debt_to_income$NAME10)
 
-DMV_tracts$NAME10 <- as.numeric(DMV_tracts$NAME10)
-
-debt_to_income$NAME10 <- debt_to_income$NAME10 / 100
-
-#Merging the datasets by census tract name
-debt_tract_2 <- full_join(DMV_tracts, debt_to_income, by = "NAME10")
-
-debt_tract_2 %>%
-  ggplot() + 
-  geom_sf()
-
-# Setting CRS for geospatial visualizations 
-
-debt_tract_2 <- debt_tract_2 %>%
-  st_as_sf(coords = c("INTPTLON10", "INTPTLAT10"), remove = FALSE) %>%
-  st_set_crs(value = 4326) # setting CRS
-
-st_crs(debt_tract_2) # Checking CRS
-
-debt_tract_2 <- st_transform(debt_tract_2, crs = 4326)
-
-st_crs(debt_tract_2)
 
 # Debt-to-income ratio Choropleth
 p3 <- debt_tract_2 %>%
