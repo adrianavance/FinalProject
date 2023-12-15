@@ -907,6 +907,7 @@ Our research aimed to document and analyze the relationships between health outc
 ##Interpreting the findings:
 
 #Health Outcomes and Geographic Correlation:
-
 As we observed the mapping of health outcomes across census tracts in the DMV area, we found health issues were pervasive regardless of ward. This finding suggests a widespread impact of these health conditions, irrespective of any geographic distinctions. However, the absence of a clear pattern linking health outcomes to specific areas underscores the complexity of health determinants and indicates that factors beyond geography play a significant role. This lack of clear linkage could lead us to discover that other factors, like economic status, may have a more influential effect on health. 
 
+#Housing Loan Dynamics:
+We were interested in finding out the number of borrowers by loan type in order to provide some insight into borrowing behaviors and financial priorities within the population. In our observation, there was a significant skew towards refinancing loans rather than new home purchases. This disparity could reflect broader economic trends, such as market stability or homeowner equity growth. These results may be indicative of the low housing stock and high average value in the DMV area, thus explaining why homeowners are not selling, not buying, but mostly refinancing and remaining stagnant. 
