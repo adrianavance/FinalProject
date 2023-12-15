@@ -50,6 +50,11 @@ Health <- read_csv("PLACES.csv")
 #### Pulling geospatial data for mapping purposes 
 #Loading Tigris Shapefiles from the census year that matches the geometry of our health and economic data (2010). These shapefiles will come in handy when mapping health outcomes and economic data later in the project.
 
+### Census Tract Data
+We obtained the census tract info using the TIGER/Line Shapefile for the District of Columbia from the U.S. Census Bureau. We installed this data through the library(tigris) command, and we manually selected for the Maryland tract, Virginia tract, and DC tract to get a picture of the whole DMV area.
+
+```{r echo = false, message=FALSE, warning=FALSE}
+
 #pulling tigris package tracts data
 
 Maryland_tracts <- tracts(
