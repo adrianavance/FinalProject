@@ -558,7 +558,7 @@ combined_plot <- p3 + p4
 combined_plot
 
 ```
-This side by side comparison shows, in some instances, that tracts with lower DTI ratios have a higher percentage of health conditions. This may be because tracts where a majority of people are not able to leverage more debt against their income are worse off in terms of their health.
+This side by side comparison shows somewhat of a trend that tracts with lower DTI ratios have a higher percentage of health conditions. This may be because tracts where a majority of people are not able to leverage more debt against their income are worse off in terms of their health. This goes against our initial hypothesis that tracts with higher debt to income ratios would also experience higher rates of health conditions.
 
 #### Merging Health and Debt-to-Income dataset
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
