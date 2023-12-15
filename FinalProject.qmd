@@ -760,7 +760,7 @@ kmeans_rec<- recipe(~ ., data = dti_data) %>%
   step_select(all_numeric())
   
   debt_pca_spec <- k_means(
-  num_clusters = 2
+  num_clusters = 10
 ) %>%
   set_engine("stats", nstart = 100)
 
@@ -781,7 +781,7 @@ return(debt_clusters)
 }
 
 #mapping the output 
-DTI<- 1:100
+DTI<- 20:50
 set.seed(20220413)
 final_result <- map_dfr(.x = DTI, .f = debt_pca_fun, df = debt_to_income)
 print(final_result)
@@ -806,11 +806,48 @@ clust_plot <- final_result %>%
 clust_plot
 ```
 
+```{r}
+# Within Sum of Squares (WSS)
+wss <- fviz_nbclust(
+  dti_data,
+  FUN = hcut,
+  k.max = 10,
+  method = "wss",
+  hc_func = "hclust",
+  hc_method = "ward.D2",
+  hc_metric = "euclidean"
+)
+print(wss)
+```
+
+```{r}
+# Silhouette Distance
+sil <- fviz_nbclust(
+  dti_data,
+  FUN = hcut,
+  k.max = 10,
+  method = "silhouette",
+  hc_func = "hclust",
+  hc_method = "ward.D2",
+  hc_metric = "euclidean"
+)
+print(sil)
+```
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
-# creating a Cluster Denodgram 
+#perform hierarchial clustering
+hclust_euc <- hclust(dist(dti_data), method = "ward.D2")
+
+#plot dendrogram
+plot(hclust_euc, main = "Cluster Dendogram", sub = "")
+rect.hclust(hclust_euc, k = 4, border = "purple")
+
+
+#perform hierarchial clustering
 d <- dist(dti_data, method = "euclidean")
 hclust_euc<- hclust(d, "ward.D2")
+
+#plot dendrogram
 plot(hclust_euc, cex = 0.6, hang = -1, main = "Cluster Dendogram")
 rect.hclust(hclust_euc, k = 4, border = "purple")
 
@@ -854,9 +891,12 @@ p5 <- ggplot(DTI_Health_clust, aes(x = PC1, y = PC2, color = MeasureId)) +
   labs(x = "Principal Component 1", 
        y = "Principal Component 2") +
 theme_minimal()
+
 p5
 
 ```
+This scatterplot shows healthmeasures clustered together based upon the PCA variance of Debt-to-income variables.
+
 ```{r}
 DTI_Health_clust2 <- merge(debt_to_income, Health_append, by = "CountyFIPS")
   
@@ -866,7 +906,8 @@ DTI_fun <- function(DTI_ratio, DTI_Health_clust2) {
 DTI_pca_rec <- recipe(~., DTI_Health_clust2)
 
 DTI_pca_trans <- DTI_pca_rec |>
-  step_normalize(all_numeric()) |>
+  step_zv(all_numeric_predictors()) |>
+  step_normalize(all_numeric_predictors()) |>
   step_pca(all_numeric_predictors(), id = "pca_")
 
 DTI_pca_estimates <- prep(DTI_pca_trans, training = DTI_Health_clust2)
@@ -874,7 +915,19 @@ DTI_pca_estimates <- prep(DTI_pca_trans, training = DTI_Health_clust2)
 DTI_Health_data <- bake(DTI_pca_estimates, DTI_Health_clust2)
 
 #clusters
-DTI_Health_spec <- 
-}
-```
+DTI_Health_spec <- k_means(
+  num_clusters = 4) |>
+  set_engine(
+    "stats"
+  )
 
+#fit the final model
+kmeans_pca_fit <- DTI_Health_spec |>
+  fit(~., data = DTI_Health_clust2)
+
+clusters <- extract_cluster_assignment(kmeans_pca_fit)
+summary(clusters)
+
+}
+
+```
