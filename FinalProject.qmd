@@ -554,15 +554,14 @@ health_merged2 <- st_join(DMV_tracts, health_merged, join = st_intersects)
 
 #create choropleth maps
 
-p4 <- health_merged %>%
-  ggplot() + geom_sf(data = DMV_tracts) +
+p4 <- health_merged2 %>%
+  ggplot() + 
   geom_sf(
     aes(
-      fill = calculated_value), color = "blue", size = 0.1) +
-  scale_fill_gradient(
-    low = "#81FFEF", 
-    high = "#F067B4",
-    na.value = "white"
+      fill = calculated_value), color = "white", size = 0.1) +
+  scale_fill_continuous(
+    trans = "log",
+    breaks = c(50, 100, 300, 1000, 2000),
   ) +
   labs(
     fill = "Health Measures Count") +
