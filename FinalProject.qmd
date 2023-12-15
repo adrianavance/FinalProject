@@ -34,6 +34,7 @@ library(randomForest)
 library(caret)
 library(tidymodels)
 library(hexbin)
+library(scales)
 ```
 
 <<<<<<< HEAD
@@ -867,3 +868,25 @@ plot(hclust_euc, cex = 0.6, hang = -1, main = "Cluster Dendogram")
 rect.hclust(hclust_euc, k = 4, border = "purple")
 
 ```
+
+# cluster Analysis
+```{r}
+# PCA variance check
+
+#filter dataframe to DTI ratios 20 and over
+
+DTI_clust <- debt_to_income |>
+  select(DTI_ratio, NAME10, COUNTYFP, percent_minority, concentrated_poverty)
+
+#make recipe
+DTI_clust_rec <- recipe(~., DTI_clust) |>
+  step_pca(all_numeric_predictors(), id = "pca_") |>
+  prep()
+
+#variance
+tidy(DTI_clust_rec, number = 1, type = "variance")
+  
+#bake to get principal components
+DTI_pcs <- 
+```
+
