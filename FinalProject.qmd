@@ -500,7 +500,7 @@ leaflet(debt_tract_2) %>%
   )
 
 ```
-This map demonstrates the differences between the debt-to-income ratio for single family home purchases in the DMV area. You can click on each census tract to get specific information from each census tract.
+This map demonstrates the differences between the debt-to-income ratio for single family home purchases in the DMV area. 
 
 ## Visualizations of health outcomes in the DMV area
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
@@ -729,7 +729,7 @@ test_predictions <- bind_cols(
   depression_test2, predicted_values)
 
 test_predictions <- test_predictions %>%
-  rename(.pred = ...99)
+  rename(.pred = ...100)
 
 metrics(test_predictions, truth = Data_Value, estimate = .pred)
 
