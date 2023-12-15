@@ -35,6 +35,9 @@ library(caret)
 library(tidymodels)
 library(hexbin)
 library(scales)
+library(gganimate)
+library(gifski)
+library(fpc)
 ```
 
 <<<<<<< HEAD
@@ -787,6 +790,37 @@ final_result <- map_dfr(.x = DTI, .f = debt_pca_fun, df = debt_to_income)
 print(final_result)
   
 ```
+```{r}
+#animated scatterplot
+
+clus_plot <- ggplot(
+  final_result,
+  aes(PC1, PC2, color = percent_minority, frame = DTI_ratio)
+) +
+  geom_point() +
+  labs(
+    title = "Animated Scatter Plot of Percent Minority across DTI_ratios",
+    x = "PC1",
+    y = "PC2",
+    color = "percent minority"
+  ) +
+  transition_states(DTI_ratio) +
+  ease_aes('linear') +
+  enter_fade() +
+  exit_fade() +
+  theme_minimal()
+
+#save animation as gif
+animate(
+  clus_plot,
+  duration = 10,
+  fps = 20,
+  width = 400,
+  height = 400,
+  renderer = gifski_renderer()
+)
+anim_save("clust_gif.gif")
+```
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 # mapping the cluster plot 
@@ -834,15 +868,17 @@ sil <- fviz_nbclust(
 print(sil)
 ```
 
-```{r echo=FALSE, warning=FALSE, message=FALSE}
+```{r}
 #perform hierarchial clustering
 hclust_euc <- hclust(dist(dti_data), method = "ward.D2")
 
 #plot dendrogram
 plot(hclust_euc, main = "Cluster Dendogram", sub = "")
-rect.hclust(hclust_euc, k = 4, border = "purple")
+rect.hclust(hclust_euc, k = 10, border = "purple")
+```
 
 
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 #perform hierarchial clustering
 d <- dist(dti_data, method = "euclidean")
 hclust_euc<- hclust(d, "ward.D2")
