@@ -205,8 +205,8 @@ This dataset provides the exact locations of banks in the District of Columbia. 
 banks <- read.csv("banks.csv")
 
 # replace the white space with underscores and lower-case all of the letters in column names
-names(banks) <- names(banks) |> 
-  str_replace_all("\\s", "_") |> 
+names(banks) <- names(banks) %>% 
+  str_replace_all("\\s", "_") %>% 
   str_to_lower()
 ```
 Replacing white space in the dataframe will help to make the dataset more readable with R programs.
@@ -214,7 +214,7 @@ Replacing white space in the dataframe will help to make the dataset more readab
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 
 #filter the data to rows about banks that have valid longitudes and latitudes
-banks_locations <- banks |>
+banks_locations <- banks %>%
   filter(!is.na(longitude), !is.na(latitude))
 
 #convert longitude and latitude columns into spatial geometries
@@ -341,14 +341,6 @@ Health_map <- st_join(DMV_tracts, Health_map, st_intersects)
 Health_DC <- Health_map %>%
   filter(COUNTYFP10 == "001") %>%
   filter(MeasureId == "DEPRESSION")
-
-#healthyy <- st_as_sf(Health2, coords = c("longitude", "latitude"))
-#healthyy <- st_set_crs(healthyy, value = 4326)
-#healthyy<- st_transform(healthyy, crs = 4326)
-
-#Filter depression
-#healthyy <- healthyy %>%
- # filter(short_question_text %in% c("Depression"))
       
 
 #transforming so it matches for the spatial join
@@ -493,14 +485,14 @@ Health1 <- read_csv("PLACES.csv")
 
 #Clean data and get long and lat columns
 Health2 <- Health1 %>%
-  separate(col = Geolocation, into = c("point", "coordinates"), sep = " ", extra = "merge", remove = FALSE) |>
+  separate(col = Geolocation, into = c("point", "coordinates"), sep = " ", extra = "merge", remove = FALSE) %>%
   separate(col = coordinates, into = c("longitude", "latitude"), sep = " ", remove = TRUE)
 
 Health2 <- Health2 %>%
   mutate(longitude = gsub("[()]", "", longitude),
          latitude = gsub("[()]", "", latitude))
 
-names(Health2) <- names(Health2) |> 
+names(Health2) <- names(Health2) %>% 
   str_to_lower()
 
 #Use consistent health measures: CASTHMA, CHD, Depression, Diabetes, Stroke
@@ -724,11 +716,9 @@ Using a machine learning model that adapts to non-linear relationships has shown
 # Cluster Analysis
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 
-debt_to_income<- debt_to_income %>%
-  as.factor(NAME10)
 
 dti_data <- debt_to_income %>%
-  select(NAME10, DTI_ratio)
+  select(percent_minority, DTI_ratio)
 
 #change NAME10 to categorical here
 
@@ -808,7 +798,7 @@ clust_plot <- final_result %>%
     alpha = 0.5
   ) +
   labs(
-    title = "DTI",
+    title = "Debt-to-Income Ratios in the DMV Area Based on Percent Minority Population",
     x = "PC1",
     y = "PC2"
   ) + 
@@ -838,22 +828,22 @@ rect.hclust(hclust_euc, k = 4, border = "purple")
 debt_to_income$CountyFIPS <- paste0(debt_to_income$state_postal_code, debt_to_income$COUNTYFP)
 
 #filter out health dataset to append to DTI data
-Health_append <- Health |>
+Health_append <- Health %>%
   select(CountyFIPS, MeasureId)
 
-DTI_clust <- debt_to_income |>
+DTI_clust <- debt_to_income %>%
   select(DTI_ratio, NAME10, CountyFIPS, percent_minority, concentrated_poverty)
 
 #make recipe
-DTI_clust_rec <- recipe(~., DTI_clust) |>
-  step_pca(all_numeric_predictors(), id = "pca_") |>
+DTI_clust_rec <- recipe(~., DTI_clust) %>%
+  step_pca(all_numeric_predictors(), id = "pca_") %>%
   prep()
 
 #variance
 tidy(DTI_clust_rec, number = 1, type = "variance")
   
 #bake to get principal components
-DTI_pcs <- DTI_clust_rec |>
+DTI_pcs <- DTI_clust_rec %>%
   bake(new_data = NULL)
 
 #merge dataframes
