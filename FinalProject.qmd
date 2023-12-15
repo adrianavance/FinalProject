@@ -27,8 +27,6 @@ library(tidyclust)
 library(tigris)
 library(broom)
 library(factoextra)
-library(tmap)
-library(mapproj)
 library(leaflet)
 library(randomForest)
 library(caret)
@@ -358,7 +356,7 @@ Health_map <- st_join(DMV_tracts, Health_map, st_intersects)
 
 Health_DC <- Health_map %>%
   filter(COUNTYFP10 == "001") %>%
-  filter(MeasureId == "DEPRESSION")
+  filter(MeasureId == "CHD")
       
 
 #transforming so it matches for the spatial join
@@ -377,7 +375,7 @@ max_banks_health_1 <- banks_health_1 %>%
   summarize(n = n())
 
 
-Banks_Depression_400 <- max_banks_health_1 %>%
+Banks_CHD_400 <- max_banks_health_1 %>%
   ggplot() + 
   geom_sf(aes(fill = n)) + 
    scale_fill_gradient(
@@ -385,7 +383,7 @@ Banks_Depression_400 <- max_banks_health_1 %>%
     high = "blue",
     na.value = "white"
   ) + labs(
-    title = "People Experiencing Depression Within 1/4 Mile of a Bank",
+    title = "People with CHD Within 1/4 Mile of a Bank",
   ) 
 
 
@@ -397,7 +395,7 @@ max_banks_health_2 <- banks_health_2 %>%
   summarize(n = n())
 
 
-Banks_Depression_1600 <- max_banks_health_2 %>%
+Banks_CHD_1600 <- max_banks_health_2 %>%
   ggplot() + 
   geom_sf(aes(fill = n)) + 
    scale_fill_gradient(
@@ -405,13 +403,17 @@ Banks_Depression_1600 <- max_banks_health_2 %>%
     high = "blue",
     na.value = "white"
   )+ labs(
-    title = "People Experiencing Depression Within 1 Mile of a Bank",
+    title = "People with CHD Within 1 Mile of a Bank",
   ) 
 
 
 Banks_Depression_400 + Banks_Depression_1600
 ```
+<<<<<<< HEAD
 *** Add description about bank/depression proximity here ***
+=======
+*** Add description about bank/health ratio map here ***
+>>>>>>> 219fcf73cde18d64b59cca8ae51beeb90a623d98
 
 ### Data Visualization: Mapping debt outcomes by census tract
 Performing a merge with the tigris shapefiles to map debt-to-income ratios as a choropleth and interactive map
@@ -800,6 +802,7 @@ final_result <- map_dfr(.x = DTI, .f = debt_pca_fun, df = debt_to_income)
 print(final_result)
   
 ```
+
 ```{r}
 #animated scatterplot
 
@@ -975,5 +978,4 @@ clusters <- extract_cluster_assignment(kmeans_pca_fit)
 summary(clusters)
 
 }
-
 ```
