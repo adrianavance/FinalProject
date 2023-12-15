@@ -834,8 +834,15 @@ rect.hclust(hclust_euc, k = 4, border = "purple")
 
 #filter dataframe to DTI ratios 20 and over
 
+#concatenate two columns to make matching columns with Health dataset
+debt_to_income$CountyFIPS <- paste0(debt_to_income$state_postal_code, debt_to_income$COUNTYFP)
+
+#filter out health dataset to append to DTI data
+Health_append <- Health |>
+  select(CountyFIPS, MeasureId)
+
 DTI_clust <- debt_to_income |>
-  select(DTI_ratio, NAME10, COUNTYFP, percent_minority, concentrated_poverty)
+  select(DTI_ratio, NAME10, CountyFIPS, percent_minority, concentrated_poverty)
 
 #make recipe
 DTI_clust_rec <- recipe(~., DTI_clust) |>
@@ -846,6 +853,19 @@ DTI_clust_rec <- recipe(~., DTI_clust) |>
 tidy(DTI_clust_rec, number = 1, type = "variance")
   
 #bake to get principal components
-DTI_pcs <- 
+DTI_pcs <- DTI_clust_rec |>
+  bake(new_data = NULL)
+
+#merge dataframes
+DTI_Health_clust <- merge(DTI_pcs, Health_append, by = "CountyFIPS")
+
+#scatter plot with PC1 on x-axis and PC2 on y-axis with Health measures as color
+p5 <- ggplot(DTI_Health_clust, aes(x = PC1, y = PC2, color = MeasureId)) +
+  geom_point() +
+  labs(x = "Principal Component 1",
+       y = "Principal Component 2") +
+theme_minimal()
+p5
+
 ```
 
