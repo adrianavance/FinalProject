@@ -196,7 +196,10 @@ debt_to_income %>%
 ```
 This hexbin plot demonstrates that there is a concentration of loans among the 300,000 dollar amount in 30-40% minority census tracts. There is also a significant concentration of single family home loans in the near-100% minority census tracts, but we can see that the loans trend much lower for minority census tracts, closer to 100,000 dollars.
 
-### Loading and cleaning banks dataset
+### Banks
+
+This dataset provides the exact locations of banks in the District of Columbia. The data is available for access on Washington DC’s open data portal. The locations of the banks are provided by the Department of Insurance Securities and Banking (DISB). The dataset is updated irregularly, as needed, and provides the latitude and longitude coordinates of the banks across DC.  
+
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 #loading banks data 
 banks <- read.csv("banks.csv")
@@ -224,17 +227,16 @@ banks_locations <- st_set_crs(banks_locations, value = 4326)
 st_crs(banks_locations)
 
 #plot map using ggplot2
-banks_locations |>
-  ggplot() +
-  geom_sf(
-    aes(color = name), alpha = 0.4, size = 2)
+banks_locations %>%
+ggplot()+ 
+  geom_sf(data = DC_tracts) + 
+  geom_sf(data = banks_locations, aes(color = ward), size = 0.6) 
 
 ```
-*** Say something about the locations/density of banks here ***
+We can see by this map of the locations of the banks in DC in each census tract that the highest concentration of banks is in Ward 2. This is understandable since the city center is located within Ward 2. This map illustrates the low density of banks in Wards 7, 8 and 4 as compared to the rest of DC. Wards 7 and 8 have the highest concentration of people in poverty in DC, while Ward 4 is mostly a residential region where the population is majority non-white. This map gives a preview of our future analysis that proximity to banks is demonstrative of economic outcomes in areas. Since access to banking is indicative of one's access to resources, this map shows the relationship between resources and economic outcomes, specifically for high-poverty areas like Ward 7 and 8, where there are high concentrations of people in poverty and low access to banks. 
 
 
 ```{r}
-
 # spatial join and census tracts 
 #match CRS of both objects using the given CRS: 4326
 banks_chloro <- st_transform(banks_locations, crs = st_crs(DMV_tracts))
@@ -250,30 +252,12 @@ banks_merged_1 <- banks_join %>%
 #join census tract back to new dataframe
 banks_merged_1 <- st_join(DMV_tracts, banks_merged_1, join = st_intersects)
 
-#trying to plot bank locations over a map of the census tracts 
 
-#library(tmap)
-#tm_shape(DMV_tracts) +
-#tm_polygons()
+```
 
-#DMV_tracts_filter<- DMV_tracts %>%
- # select(GEOID10, geometry)
-
-#plot(DMV_tracts_filter)
-
-#tm_shape(DMV_tracts_filter) +
- # tm_polygons("banks_join")
-
-
-# this map of bank location in DC works, but I'm not sure it's correct and it's not a choropleth
-banks_join %>%
-  ggplot()+ 
-  geom_sf(data = DC_tracts) + 
-  geom_sf(data = banks_locations, aes(color = ward)) 
-
-#chloropleth
-
-banks_merged_2 <- banks_merged_1 |>
+```{r}
+#choropleth
+banks_merged_2 <- banks_merged_1 %>%
   select(geometry, bank_count)
 
 p1 <- banks_merged_2 %>%
@@ -286,54 +270,9 @@ p1 <- banks_merged_2 %>%
 p1
   
 ```
-# Banks Choropleth
-```{r echo=FALSE, warning=FALSE, message=FALSE}
-
-# trying to create a choropleth and it is not working lol
-banks_merged <- banks_join %>%
-  group_by(NAME10) %>%
-  mutate(n = n()) %>%
-  ungroup()
-  
-  
-banks_merged_agg <- st_join(DC_tracts, banks_merged, join = st_intersects)  
 
 
-# attempt 1
-p1<- banks_merged_agg %>%
-  
-  ggplot() + geom_sf(data = DC_tracts) +
-  geom_sf(aes(fill = n), size = 0.1) + coord_sf() +
-  scale_x_continuous(breaks = 1:5) +
- scale_fill_gradient(
-    low = "#90ee90", 
-    high = "#F067B4",
-    ) 
-p1
-
-library(scales)
-
-p1<- banks_merged_agg %>%
-  ggplot() + geom_sf(data = DC_tracts) +
-  geom_sf(aes(fill = n), size = 0.1) + coord_sf() +
-scale_fill_gradientn(colours = c("blue","white","red"), 
-                         values = rescale(c(10, 12, 14, 16, 18, 20)),
-                         guide = "colorbar")
-p1
-
-# attempt 2
-banks_merged_try <- banks_join %>%
-  group_by(NAME10) %>%
-  mutate(n = n()) %>%
-  ungroup()
-
-banks_merged_try %>%
-  ggplot() +
-  geom_sf(aes(fill = n, color = n, alpha = 0.2)) 
-
-```
-
-# Geospatial Analysis
+#Geospatial Analysis with Banks
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 
 # looking at economic outcomes in relationship to distance to banks 
@@ -345,15 +284,16 @@ econ <- debt_tract_2 %>%
   st_as_sf(coords = c("INTPTLON10", "INTPTLAT10"), remove = FALSE) %>%
   st_set_crs(value = 4326) # setting CRS
 
+# close proximity to banks
 banks_filtered<- st_join(banking, DC, left= FALSE)
-banks_econ<- st_join(econ, st_buffer(banks_filtered, dist = 400))
+banks_econ_1<- st_join(econ, st_buffer(banks_filtered, dist = 400))
 
-max_banks_econ<- banks_econ %>%
+max_banks_econ_1<- banks_econ_1 %>%
   group_by(NAME10) %>%
   filter(DTI_ratio > 20) %>%
   summarize(n = n()) 
 
-Banks_Debt <- max_banks_econ %>%
+Banks_Debt_400 <- max_banks_econ_1 %>%
   ggplot() + 
   geom_sf(aes(fill = n)) + 
    scale_fill_gradient(
@@ -361,6 +301,27 @@ Banks_Debt <- max_banks_econ %>%
     high = "blue",
     na.value = "white"
   )
+
+# far proximity to banks 
+
+banks_econ_2<- st_join(econ, st_buffer(banks_filtered, dist = 1600))
+
+max_banks_econ_2<- banks_econ_2 %>%
+  group_by(NAME10) %>%
+  filter(DTI_ratio > 20) %>%
+  summarize(n = n()) 
+
+Banks_Debt_1600 <- max_banks_econ_2 %>%
+  ggplot() + 
+  geom_sf(aes(fill = n)) + 
+   scale_fill_gradient(
+    low = "#D1E3F5",
+    high = "blue",
+    na.value = "white"
+  )
+
+Banks_Debt_400 + Banks_Debt_1600
+
 ```
 *** Add description about bank/DTI ratio map here ***
 
@@ -396,16 +357,17 @@ banks_filtered<- st_join(banking, DC, left= FALSE)
 st_crs(Health_DC)
 banks_filtered <- st_transform(banks_filtered, crs = 4269)
 
-banks_health<- st_join(Health_DC, st_buffer(banks_filtered, dist = 400))
 
+# close proximity to banks
 
-max_banks <- banks_health %>%
+banks_health_1<- st_join(Health_DC, st_buffer(banks_filtered, dist = 400))
+
+max_banks_health_1 <- banks_health_1 %>%
   group_by(NAME10) %>%
   summarize(n = n())
 
-view(max_banks)
 
-Banks_Depression <- max_banks %>%
+Banks_Depression_400 <- max_banks_health_1 %>%
   ggplot() + 
   geom_sf(aes(fill = n)) + 
    scale_fill_gradient(
@@ -414,7 +376,26 @@ Banks_Depression <- max_banks %>%
     na.value = "white"
   )
 
-Banks_Depression + Banks_Debt
+
+# far proximity to banks
+banks_health_2<- st_join(Health_DC, st_buffer(banks_filtered, dist = 1600))
+
+max_banks_health_2 <- banks_health_2 %>%
+  group_by(NAME10) %>%
+  summarize(n = n())
+
+
+Banks_Depression_1600 <- max_banks_health_2 %>%
+  ggplot() + 
+  geom_sf(aes(fill = n)) + 
+   scale_fill_gradient(
+    low = "#D1E3F5",
+    high = "blue",
+    na.value = "white"
+  )
+
+
+Banks_Depression_400 + Banks_Depression_1600
 ```
 
 
@@ -561,13 +542,9 @@ health_merged <- Health_join |>
 health_merged2 <- st_join(DMV_tracts, health_merged, join = st_intersects)
 
 #create choropleth maps
-<<<<<<< HEAD
-p4 <- health_merged2 |>
-  ggplot() +
-=======
-p4 <- health_merged |>
+
+p4 <- health_merged %>%
   ggplot() + geom_sf(data = DMV_tracts) +
->>>>>>> 5dfb9f7dbf8dd9bfa1a59c3b4be198170edcf5ef
   geom_sf(
     aes(
       fill = calculated_value), color = "blue", size = 0.1) +
@@ -746,7 +723,9 @@ Using a machine learning model that adapts to non-linear relationships has shown
 
 # Cluster Analysis
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
-# ATTEMPT
+
+debt_to_income<- debt_to_income %>%
+  as.factor(NAME10)
 
 dti_data <- debt_to_income %>%
   select(NAME10, DTI_ratio)
@@ -841,35 +820,13 @@ clust_plot
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 
-set.seed(20220414)
-fviz_nbclust(
-  dti_data, 
-  FUN = hcut, 
-  k.max = 10, 
-  method = "wss", 
-  hc_func = "hclust", 
-  hc_method = "ward.D2", 
-  hc_metric = "euclidean"
-)
-
-set.seed(20220414)
-fviz_nbclust(
-  dti_data,
-  FUN = hcut,
-  k.max = 10,
-  method = "silhouette",
-  hc_func = "hclust",
-  hc_method = "ward.D2",
-  hc_metric = "euclidean"
-)
-
 d <- dist(dti_data, method = "euclidean")
 hclust_euc<- hclust(d, "ward.D2")
 plot(hclust_euc, cex = 0.6, hang = -1, main = "Cluster Dendogram")
 rect.hclust(hclust_euc, k = 4, border = "purple")
 
 ```
-<<<<<<< HEAD
+
 
 # cluster Analysis
 ```{r}
@@ -892,5 +849,3 @@ tidy(DTI_clust_rec, number = 1, type = "variance")
 DTI_pcs <- 
 ```
 
-=======
->>>>>>> f81241620f315fdf9021fc53cb9676812d421d5a
