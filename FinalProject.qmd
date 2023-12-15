@@ -9,9 +9,37 @@ format:
     embed-resources: true
 ---
 
-## Data Wrangling and Exploratory Data Analysis
 
-Loading necessary packages
+## Part 01
+### Background and Literature Review
+
+####Background:
+	In this project, we will examine the relationship between economic status and public health outcomes in the D.C. area. We seek to look at several different factors, analyzing economic status through both mortgage loan debt in the DMV and bank locations in the District of Columbia. The relationship between economic indicators and public health outcomes is well-studied and has great implications for the policy world. Economic success has been shown to be associated with better public health outcomes. Additionally, a healthy economy is usually associated with a healthier U.S. population. On a microeconomic level, this may mean that individual economic hardship is associated with worse public health outcomes. This is the question that our project intends to investigate– are census tracts with higher levels of mortgage debt, or fewer proximate banks, also more prone to negative public health outcomes such as higher rates of heart disease or depression? 
+
+
+####Literature Review:
+	
+[Economic influences on population health in the United States: Toward policymaking driven by data and evidence.](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7467305/#:~:text=Falling%20incomes%20can%20reduce%20access)
+
+This article provides a comprehensive overview of the study on the linkage between economic conditions and public health. Investigating the reasons behind declining U.S. life expectancy, the authors lay out the connections between economic trends and public health in the United States. Empirical evidence suggests that worsening economic outcomes is correlated with lower life expectancy, and that this trend is particularly prominent in low-income and less-educated adults. The authors go on to suggest policy solutions to the problem such as investment in social programs and early education.
+
+[Measuring the Health Outcomes of Social, Economic, and Environmental Policies - Center for American Progress](https://www.americanprogress.org/article/measuring-the-health-outcomes-of-social-economic-and-environmental-policies/)
+
+This article from the Center for American Progress makes the case that social, economic, and environmental policy all have a part to play in the determination of health outcomes. Additionally, the author makes the case that data should be used in order to determine which communities are most at-risk for negative public health outcomes and to understand the influences of policy changes.
+
+
+[An analysis of financial institutions in Black-majority communities: Black borrowers and depositors face considerable challenges in accessing banking services | Brookings](https://www.brookings.edu/articles/an-analysis-of-financial-institutions-in-black-majority-communities-black-borrowers-and-depositors-face-considerable-challenges-in-accessing-banking-services/)
+
+	In this analysis from the Brookings Institute, researchers examined the relationship between race and debt across neighborhoods in America, particularly through the lens of access to banking services. Their findings showed that in majority Black and Hispanic neighborhoods there is a greatly reduced presence of banks as compared to white neighborhoods. These disparities aligned with observed differences in interest rates on business loans and growth of local businesses in majority Black neighborhoods as well, indicating a relationship between neighborhood racial demographics and concentration of banks as indicators for access to financial services.
+
+[Bank Branch Presence and Access to Credit in Low‐ to Moderate‐Income Neighborhoods ](https://onlinelibrary.wiley.com/doi/abs/10.1111/j.1538-4616.2010.00343.x)
+
+This article presents evidence that shows access to credit in low-to-moderate income neighborhoods is correlated with the presence of bank branches. Some suggest that this is due to the presence of a bank indicating information costs, as being closer to a bank provides people access to information about credit and loans. This study reveals that mortgage loan transactions increase in low-to-moderate income neighborhoods when there is a bank branch present. 
+
+	This literature has informed our analysis by providing context for why low-income populations of color often face more economic hardship and have worse public health outcomes. The following analysis will use data from the CDC, FHFA, and elsewhere to analyze the relationship between mortgage debt and health outcomes in the DMV.
+
+
+[Loading necessary packages]
 ```{r message=FALSE, warning=FALSE}
 library(httr)
 library(jsonlite)
@@ -41,19 +69,10 @@ library(fpc)
 ```
 
 
-## Part 01
+## Part 03
 ### Data Wrangling and Plots
-```{r echo = false, message=FALSE, warning=FALSE}
-#Read in CSV of CDC data
-Health <- read_csv("PLACES.csv")
 
-#### Pulling geospatial data for mapping purposes 
-#Loading Tigris Shapefiles from the census year that matches the geometry of our health and economic data (2010). These shapefiles will come in handy when mapping health outcomes and economic data later in the project.
-
-### Census Tract Data
-#We obtained the census tract info using the TIGER/Line Shapefile for the District of Columbia from the U.S. Census Bureau. We installed this data through the library(tigris) command, and we manually selected for the Maryland tract, Virginia tract, and DC tract to get a picture of the whole DMV area.
-
-```
+We obtained the census tract info using the TIGER/Line Shapefile for the District of Columbia from the U.S. Census Bureau. We installed this data through the library(tigris) command, and we manually selected for the Maryland tract, Virginia tract, and DC tract to get a picture of the whole DMV area.
 
 ```{r echo = false, message=FALSE, warning=FALSE}
 
@@ -229,7 +248,7 @@ This hexbin plot demonstrates that there is a concentration of loans among the 3
 
 ### Banks
 
-This dataset provides the exact locations of banks in the District of Columbia. The data is available for access on Washington DC’s open data portal. The locations of the banks are provided by the Department of Insurance Securities and Banking (DISB). The dataset is updated irregularly, as needed, and provides the latitude and longitude coordinates of the banks across DC.  
+This dataset provides the exact locations of banks in the District of Columbia. The data is available for access on [Washington DC’s open data portal](https://opendata.dc.gov/datasets/DCGIS::bank-locations/explore?location=39.007423%2C-76.009578%2C8.59). The locations of the banks are provided by the Department of Insurance Securities and Banking (DISB). The dataset is updated irregularly, as needed, and provides the latitude and longitude coordinates of the banks across DC.  
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 #loading banks data 
