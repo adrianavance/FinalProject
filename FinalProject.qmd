@@ -227,13 +227,21 @@ banks_locations <- st_set_crs(banks_locations, value = 4326)
 st_crs(banks_locations)
 
 #plot map using ggplot2
-banks_locations %>%
+banks_locations_1 <- banks_locations %>%
 ggplot()+ 
   geom_sf(data = DC_tracts) + 
   geom_sf(data = banks_locations, aes(color = ward), size = 0.6) 
 
+banks_locations_2 <- banks_locations %>%
+  group_by(ward) %>%
+  summarize(n = n()) %>%
+  ggplot() + 
+  geom_col(aes(x= ward, y = n, fill = ward))
+
+banks_locations_1 + banks_locations_2
+
 ```
-We can see by this map of the locations of the banks in DC in each census tract that the highest concentration of banks is in Ward 2. This is understandable since the city center is located within Ward 2. This map illustrates the low density of banks in Wards 7, 8 and 4 as compared to the rest of DC. Wards 7 and 8 have the highest concentration of people in poverty in DC, while Ward 4 is mostly a residential region where the population is majority non-white. This map gives a preview of our future analysis that proximity to banks is demonstrative of economic outcomes in areas. Since access to banking is indicative of one's access to resources, this map shows the relationship between resources and economic outcomes, specifically for high-poverty areas like Ward 7 and 8, where there are high concentrations of people in poverty and low access to banks. 
+We can see by this map of the locations of the banks in DC in each census tract that the highest concentration of banks is in Ward 2. This is understandable since the city center is located within Ward 2. This map illustrates the low density of banks in Wards 7, 8 and 4 as compared to the rest of DC, which is also confirmed in the bar graph showing the count of banks in each ward. Wards 7 and 8 have the highest concentration of people in poverty in DC, while Ward 4 is mostly a residential region where the population is majority non-white. This map gives a preview of our future analysis that proximity to banks is demonstrative of economic outcomes in areas. Since access to banking is indicative of one's access to resources, this map shows the relationship between resources and economic outcomes, specifically for high-poverty areas like Ward 7 and 8, where there are high concentrations of people in poverty and low access to banks. 
 
 
 ```{r}
@@ -716,31 +724,13 @@ Using a machine learning model that adapts to non-linear relationships has shown
 # Cluster Analysis
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 
-
 dti_data <- debt_to_income %>%
   select(percent_minority, DTI_ratio)
-
-#change NAME10 to categorical here
-
-#maybe instead of NAME10 use percent_minority 
-
-#try something that is less continuous, and has more discrete categories like county 
 
 dti_pca_rec <- recipe(~ ., data = dti_data) %>%
   step_pca(all_numeric(), id = "pca") %>%
   prep(data = dti_data) %>%
   bake(new_data = dti_data) 
-
-
-viz_1 <- dti_pca_rec %>%
-  ggplot() +
-  geom_point(
-    mapping = aes(x = PC1, y = PC2),
-    alpha = 0.5
-  ) +
-  theme_minimal()
-
-viz_1 
 
 
 #create the function 
@@ -760,7 +750,7 @@ kmeans_rec<- recipe(~ ., data = dti_data) %>%
   step_select(all_numeric())
   
   debt_pca_spec <- k_means(
-  num_clusters = 4
+  num_clusters = 2
 ) %>%
   set_engine("stats", nstart = 100)
 
@@ -794,8 +784,8 @@ print(final_result)
 clust_plot <- final_result %>%
   ggplot() +
   geom_point(
-    mapping = aes(x = PC1, y = PC2),
-    alpha = 0.5
+    mapping = aes(x = PC1, y = PC2, color = percent_minority),
+    alpha = 0.5, size = 0.1
   ) +
   labs(
     title = "Debt-to-Income Ratios in the DMV Area Based on Percent Minority Population",
