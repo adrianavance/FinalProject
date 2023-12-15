@@ -447,7 +447,7 @@ p3
 
 ```
 
-This geospatial visualization demonstrates the range of debt-to-income ratios by census tract in the DMV. The range of colors provides a visualization of the range, but it would be helpful to know the averages for each census tract. 
+From this visualization we can see that the four major health outcomes we chose: diabetes, depression, coronary heart disease, and asthma, are quite evenly spread across the DMV area. While some of the census tracts further from the center of D.C. have fewer health outcomes, there is at least one present in each census tract. The colors for each outcome provide a helpful visualization of the range.  
 
 ### Using Leaflet to create an interactive map of debt to income ratios in the DMV
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
@@ -642,7 +642,11 @@ lasso_fit %>%
 # The RMSE of this model's best fit is around 22. 
 
 ```
-FOR KAMIRYN: I'm honestly not sure I'm gonna leave this model in here, so feel free to skip over it when you're doing the write up. If I decide to keep it I will add something about it later. Thanks! However please include the second model (below) 
+The average RMSE across 10 folds for the best fit model is around 22. This suggests that the average difference between the percentage of minorities in a census tract predicted by the model and the true percentage is 22 percentage points. 22 percentage points is a significant error. 
+
+Taking the results from this prediction using our debt dataset, we decided to try a different type of model. LASSO regression is best for linear relationships, and it makes sense that this model may not capture all of the variation in the percentage of minorities across all census tracts in the DMV. 
+
+For our next machine learning model, we will take what we've learned from the performance of this model to predict something a bit more complex: health outcomes across the DMV using economic data. 
 
 ### Machine Learning Model #2: Predicting rates of depression in a census tract using economic predictors from the debt-to-income dataset
 
@@ -677,7 +681,7 @@ rf_mod
 ```
 This model only explains about 77.6% of the variance in the rates of depression in each census tract. We think this is because there is a lack of tuning the model, and because we limited the number of predictors such that there was not enough information. 
 
-After filtering out observations that are not interpretable by RF modeling, we will try a random forest model with all predictors
+Next, we will try a similar random forest model, but with more predictors and some hyperparameter tuning to find the best number of mtrys. 
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 # Trying some tuning to see if we can find the best amount of mtrys to use for the model
