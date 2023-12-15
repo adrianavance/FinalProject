@@ -9,6 +9,7 @@ format:
     embed-resources: true
 ---
 
+TESTING FOR SITE
 
 
 Loading necessary packages
@@ -409,11 +410,7 @@ Banks_CHD_1600 <- max_banks_health_2 %>%
 
 Banks_Depression_400 + Banks_Depression_1600
 ```
-<<<<<<< HEAD
-*** Add description about bank/depression proximity here ***
-=======
-*** Add description about bank/health ratio map here ***
->>>>>>> 219fcf73cde18d64b59cca8ae51beeb90a623d98
+*** Add Description of maps here ***
 
 ### Data Visualization: Mapping debt outcomes by census tract
 Performing a merge with the tigris shapefiles to map debt-to-income ratios as a choropleth and interactive map
