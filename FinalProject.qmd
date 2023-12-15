@@ -845,16 +845,15 @@ debt_to_income$CountyFIPS <- paste0(debt_to_income$state_postal_code, debt_to_in
 
 #filter out health dataset to append to DTI data
 Health_append <- Health %>%
-  select(CountyFIPS, MeasureId, Data_Value, total_population)
+  select(CountyFIPS, MeasureId, Data_Value, TotalPopulation)
 
 DTI_clust <- debt_to_income %>%
-  select(DTI_ratio, NAME10, CountyFIPS, percent_minority, concentrated_poverty) %>%
-  mutate(MeasureId == make.unique(MeasureId))
+  select(DTI_ratio, NAME10, CountyFIPS, percent_minority, concentrated_poverty)
 
 #make recipe
 DTI_clust_rec <- recipe(~., DTI_clust) %>%
   step_pca(all_numeric_predictors(), id = "pca_") %>%
-  step_normalize(all_predictors()) %>%
+  step_normalize(all_numeric_predictors()) %>%
   prep()
 
 #variance
@@ -867,15 +866,21 @@ DTI_pcs <- DTI_clust_rec %>%
 #merge dataframes
 DTI_Health_clust <- merge(DTI_pcs, Health_append, by = "CountyFIPS")
 
-#scatter plot with PC1 on x-axis and PC2 on y-axis with Health measures as color
+glimpse(DTI_Health_clust)
+
+#scatter plot 
 p5 <- ggplot(DTI_Health_clust, aes(x = PC1, y = PC2, color = MeasureId)) +
   geom_point() +
-  labs(x = "Principal Component 1", 
-       y = "Principal Component 2") +
+  labs(
+    title = "Health Measures Clusters in Relation to Debt to Income PCA",
+    x = "Principal Component 1", 
+    y = "Principal Component 2",
+    caption = "CASTHMA = Current Asthma\nCHD = Coronary Heart Disease",
+    color = "Health Measures ID") +
 theme_minimal()
 
 p5
 
 ```
-This scatterplot shows health measures clustered together based upon the PCA variance of Debt-to-income variables.However, the nonsensical nature of these graphics suggest that the cluster analysis that we fitted to these indciators was apt at predicting the relationship between these measeres. 
+This scatterplot attempts to show health measures clustered together based upon the PCA variance of Debt-to-income variables. This plot shows that stroke has the highest variance in relation to select debt to income variables. It also shows that diabetes and asthma make up some of that variance, although not as much. Moreover, after merging parts of the health measures data with the debt to income data, the clustering graphics are unclear in their representations suggesting that the cluster analysis that we fitted to these indicators may not be optimal for this data compared to our machine learning models and geospatial visualizations which did a much better job at presenting and predicting the relationship between these measures. 
 
