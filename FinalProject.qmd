@@ -9,7 +9,7 @@ format:
     embed-resources: true
 ---
 
-## Data Wrangling and Exploratory Data Analysis
+
 
 Loading necessary packages
 ```{r message=FALSE, warning=FALSE}
@@ -40,12 +40,10 @@ library(gifski)
 library(fpc)
 ```
 
-<<<<<<< HEAD
-## Part 01
-### Data Wrangling and Plots
+## Part 03
+### Data Wrangling and Exploratory Data Analysis
+#### Loading tigris shapefiles to match our datasets for geospatial analysis
 ```{r echo = false, message=FALSE, warning=FALSE}
-#Read in CSV of CDC data
-Health <- read_csv("PLACES.csv")
 
 #### Pulling geospatial data for mapping purposes 
 #Loading Tigris Shapefiles from the census year that matches the geometry of our health and economic data (2010). These shapefiles will come in handy when mapping health outcomes and economic data later in the project.
@@ -199,7 +197,7 @@ debt_to_income %>%
 ```
 This hexbin plot demonstrates that there is a concentration of loans among the 300,000 dollar amount in 30-40% minority census tracts. There is also a significant concentration of single family home loans in the near-100% minority census tracts, but we can see that the loans trend much lower for minority census tracts, closer to 100,000 dollars.
 
-### Banks
+### Bank Location Dataset
 
 This dataset provides the exact locations of banks in the District of Columbia. The data is available for access on Washington DC’s open data portal. The locations of the banks are provided by the Department of Insurance Securities and Banking (DISB). The dataset is updated irregularly, as needed, and provides the latitude and longitude coordinates of the banks across DC.  
 
@@ -246,6 +244,9 @@ banks_locations_1 + banks_locations_2
 ```
 We can see by this map of the locations of the banks in DC in each census tract that the highest concentration of banks is in Ward 2. This is understandable since the city center is located within Ward 2. This map illustrates the low density of banks in Wards 7, 8 and 4 as compared to the rest of DC, which is also confirmed in the bar graph showing the count of banks in each ward. Wards 7 and 8 have the highest concentration of people in poverty in DC, while Ward 4 is mostly a residential region where the population is majority non-white. This map gives a preview of our future analysis that proximity to banks is demonstrative of economic outcomes in areas. Since access to banking is indicative of one's access to resources, this map shows the relationship between resources and economic outcomes, specifically for high-poverty areas like Ward 7 and 8, where there are high concentrations of people in poverty and low access to banks. 
 
+## Part 04: Data Analysis
+
+### Visualization using banks and debt dataset
 
 ```{r}
 # spatial join and census tracts 
@@ -282,7 +283,8 @@ p1
 ```
 
 
-#Geospatial Analysis with Banks
+### Geospatial Analysis: Bank location in comparison to economic outcomes
+
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 
 # looking at economic outcomes in relationship to distance to banks 
@@ -340,6 +342,7 @@ Banks_Debt_400 + Banks_Debt_1600
 ```
 *** Add description about bank/DTI ratio map here ***
 
+### Geospatial Analysis: Bank location in comparison with rates of depression
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 
@@ -408,9 +411,9 @@ Banks_Depression_1600 <- max_banks_health_2 %>%
 
 Banks_Depression_400 + Banks_Depression_1600
 ```
+*** Add description about bank/depression proximity here ***
 
-
-## Creating visualizations from the debt-to-income dataset
+### Data Visualization: Mapping debt outcomes by census tract
 Performing a merge with the tigris shapefiles to map debt-to-income ratios as a choropleth and interactive map
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 
@@ -459,9 +462,10 @@ p3
 
 ```
 
-This geospatial visualization demonstrates the range of debt-to-income ratios by census tract in the DMV. The range of colors provides a visualization of the range, but it would be helpful to know the averages for each census tract. 
+From this visualization we can see that the four major health outcomes we chose: diabetes, depression, coronary heart disease, and asthma, are quite evenly spread across the DMV area. While some of the census tracts further from the center of D.C. have fewer health outcomes, there is at least one present in each census tract. The colors for each outcome provide a helpful visualization of the range. 
 
-### Using Leaflet to create an interactive map of debt to income ratios in the DMV
+
+### Data Visualization: An interactive map of debt to income ratios in the DMV
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 
 # Load required libraries
@@ -495,7 +499,7 @@ leaflet(debt_tract_2) %>%
 ```
 This map demonstrates the differences between the debt-to-income ratio for single family home purchases in the DMV area. You can click on each census tract to get specific information from each census tract.
 
-## Visualizations of health outcomes in the DMV area
+#### Visualizations of health outcomes in the DMV area
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 #Merged CDC Places dataset with census tracts and made graph and choropleths
 
@@ -574,8 +578,11 @@ combined_plot <- p3 + p4
 combined_plot
 
 ```
+*** Add description of health oucome plots here ***
+
 
 #### Merging Health and Debt-to-Income dataset
+Performing a spatial join of the debt-to-income dataset and the health outcomes dataset 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 
 #Merging health dataset with debt_tract_2 
@@ -605,7 +612,7 @@ health_debt <- st_join(debt_tract_2_sf, Health_sf, join = st_intersects)
 
 ```
 
-#### Machine Learning Model 
+### Machine Learning Models
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 library(tidymodels)
@@ -616,11 +623,10 @@ split <- initial_split(data = debt_to_income, prop = 0.75)
 debt_train <- training(x = split)
 debt_test <- testing(x = split)
 
-## Health outcome for machine learning model will be percentage of instances of depression in a censust tract
 
 ```
 
-### Machine Learning Model #1: Predicting percentage of minorities in a census tract using the single family loan data
+### Machine Learning Model #1: Predicting percentage of minorities in a census tract using economic data (single family home loan debt and other economic observations)
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 
 debt_rec <- recipe(percent_minority ~ borrower_income + borrower_age + borrower_income_ratio + tract_income_ratio + DTI_ratio + interest_rate + note_amount, data = debt_train) %>%
@@ -659,7 +665,11 @@ lasso_fit %>%
 # The RMSE of this model's best fit is around 22. 
 
 ```
-FOR KAMIRYN: I'm honestly not sure I'm gonna leave this model in here, so feel free to skip over it when you're doing the write up. If I decide to keep it I will add something about it later. Thanks! However please include the second model (below) 
+The average RMSE across 10 folds for the best fit model is around 22. This suggests that the average difference between the percentage of minorities in a census tract predicted by the model and the true percentage is 22 percentage points. 22 percentage points is a significant error. 
+
+Taking the results from this prediction using our debt dataset, we decided to try a different type of model. LASSO regression is best for linear relationships, and it makes sense that this model may not capture all of the variation in the percentage of minorities across all census tracts in the DMV. 
+
+For our next machine learning model, we will take what we've learned from the performance of this model to predict something a bit more complex: health outcomes across the DMV using economic data. 
 
 ### Machine Learning Model #2: Predicting rates of depression in a census tract using economic predictors from the debt-to-income dataset
 
@@ -694,8 +704,9 @@ rf_mod
 ```
 This model only explains about 77.6% of the variance in the rates of depression in each census tract. We think this is because there is a lack of tuning the model, and because we limited the number of predictors such that there was not enough information. 
 
-After filtering out observations that are not interpretable by RF modeling, we will try a random forest model with all predictors
+Next, we will try a similar random forest model, but with more predictors and some hyperparameter tuning to find the best number of mtrys. 
 
+### Machine Learning Model #3: Predicting rates of depression in a census tract using economic predictors from the debt-to-income dataset
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 # Trying some tuning to see if we can find the best amount of mtrys to use for the model
 bestmtry <- tuneRF(depression_train2,depression_train2$Data_Value,stepFactor = 2, improve = 0.01, trace = TRUE, plot = T, doBest = TRUE) 
