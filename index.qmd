@@ -1,0 +1,978 @@
+---
+title: "Data Science for Public Policy Final Project"
+subtitle: "Examining the Relationship Between Economic Status and Public Health Outcomes in the D.C. Area"
+author: "Adriana Vance, Kyle Kim, Elena Koshkin, Kamiryn Rose"
+execute:
+  warning: false
+format:
+  html:
+    embed-resources: true
+---
+
+TESTING FOR SITE :|
+
+
+Loading necessary packages
+```{r message=FALSE, warning=FALSE}
+library(httr)
+library(jsonlite)
+library(tidyverse)
+library(tidycensus)
+library(purrr)
+library(sf)
+library(dplyr)
+library(patchwork)
+library(recipes)
+library(ggplot2)
+library(tidyclust)
+library(tigris)
+library(broom)
+library(factoextra)
+library(leaflet)
+library(randomForest)
+library(caret)
+library(tidymodels)
+library(hexbin)
+library(scales)
+library(gganimate)
+library(gifski)
+library(fpc)
+```
+
+## Part 03
+### Data Wrangling and Exploratory Data Analysis
+#### Loading tigris shapefiles to match our datasets for geospatial analysis
+```{r echo = false, message=FALSE, warning=FALSE}
+
+#### Pulling geospatial data for mapping purposes 
+#Loading Tigris Shapefiles from the census year that matches the geometry of our health and economic data (2010). These shapefiles will come in handy when mapping health outcomes and economic data later in the project.
+
+#pulling tigris package tracts data
+
+Maryland_tracts <- tracts(
+state = "MD",
+county = c("Montgomery", "Prince George's"),
+cb = FALSE,
+resolution = "500k",
+year = 2010)
+
+Virginia_tracts <- tracts(
+  state = "VA",
+  county = "Fairfax County",
+  resolution = "500k", 
+  year = 2010
+)
+
+DC_tracts <- tracts(
+  state = "DC",
+  resolution = "500k",
+  year = 2010
+)
+
+DMV_tracts<- rbind_tigris(DC_tracts, Virginia_tracts, Maryland_tracts)
+
+```
+
+### Health Outcomes Data
+The CDC PLACES dataset uses small-area estimation methods to provide model-based mapping of 36 different chronic disease-related measures throughout the United States. These measures include 13 health outcomes, 9 prevention practices, 4 health risk behaviors, 7 disabilities, 3 health statuses, used to estimate the rates of various chronic conditions by census tract level. The CDC PLACES data was downloaded from the CDC website and sifted to select data from exclusively DC, Maryland, and Virginia. Please download the CSV file provided, "PLACES.csv", to load the correct dataframe. 
+
+```{r echo = false, message=FALSE, warning=FALSE}
+#Read in CSV of CDC data
+Health <- read_csv("PLACES.csv")
+
+# Look at types of health outcome measures
+Measures <- Health %>%
+  group_by(Measure) %>%
+  summarize(n = n())
+
+MeasureIDs <- Health %>%
+  group_by(MeasureId) %>%
+  summarize(n = n())
+
+# We want to look for current rates of asthma, heart disease, diabetes, stroke, and depression
+Health <- Health %>%
+  filter(
+    MeasureId == "CASTHMA" |
+      MeasureId == "CHD" |
+      MeasureId == "DIABETES" |
+      MeasureId == "STROKE" |
+      MeasureId == "DEPRESSION")
+
+```
+
+We chose asthma, coronary heart disease, stroke, and depression as our health outcomes of interest because research shows a strong connection between these conditions and economic status. The most useful observations from this dataset will be MeasureId, which is the type of health outcome, and Data_Value, which is the percentage of the total population of a given census tract that report said health outcome. 
+
+#### Health Outcomes Distribution Map
+
+```{r}
+# Change geometry to be readable by SF
+
+Health_map <- Health %>%
+  st_as_sf(wkt = "Geolocation", remove = FALSE) %>%
+  st_set_crs(value = 4326) # setting CRS
+
+
+# Map health outcomes
+Health_map %>%
+  ggplot() +
+  geom_sf(data = DMV_tracts) +
+  geom_sf(aes(color = MeasureId)) +
+  labs(
+    title = "Health Outcomes in the DMV",
+    subtitle = "Distribution by Census Tract",
+    caption = "CASTHMA = Current Asthma\nCHD = Coronary Heart Disease",
+    color = "Health Measures ID"
+  )
+
+```
+This map demonstrates that at least one of the health outcomes we selected are present in each census tract in our dataset. Later in the project, we will dive further into the connection between location and health outcomes, and use economic data to further understand how health outcomes differ in each census tract. There isn't an obvious pattern among the tracts that show a concentration of specific health outcomes by specific area.
+
+
+### Debt-to-Income Ratio Data
+The debt-to-income ratio dataset comes from the Federal Housing Finance Agency which records data about home purchase loans. This dataset has information on individual loans taken out for single-family homes, along with specification of census tracts. The data also include the debt-to-income ratio of each borrower, which is an indication of how much debt the borrower has taken on in relation to their income. The debt-to-income ratio (or DTI) is generally regarded as a reliable indicator of a borrower’s financial health, or ability to pay monthly debt payments. Other useful variables in this dataset that will be used in our analysis are census tract indicators, the percentage of minorities in a given census tract, tract median income, and mortgage amount. 
+
+We chose to download the dataset from 2021, as this will reflect the same year as our CDC health outcomes dataset. To download the correct dataset for our analysis, go to this [link:](https://www.bcbs.com/the-health-of-america/articles/healthy-communities-mean-better-economy) and download the ZIP file for the 2021 Freddie Mac dataset. Alternatively, you can use the txt file we included with our submission titled "debt_to_income.txt"
+
+```{r echo = FALSE, warning = FALSE, message = FALSE}
+# loading debt to income ratio data
+
+debt_to_income <- read.table("debt_to_income.txt", header = FALSE) 
+# Have to manually name columns
+
+colnames(debt_to_income) <- c('enterprise', 'record_num','state_postal_code', 'MSA', 'COUNTYFP', 'NAME10', 'percent_minority', 'median_income', 'MSA_median_income', 'tract_income_ratio', 'borrower_income','AMI', 'borrower_income_ratio', 'UPB','purpose_of_loan', 'fed_guarantee', 'num_borrowers', 'first_time_borrower', 'borrower_race_1', 'race_2', 'race_3', 'race_4', 'race_5', 'borrower_ethnicity', 'co_borrower_race_1', 'co_race_2', 'co_race_3', 'co_race_4', 'co_race_5',   'co_borrower_ethnicity', 'borrower_gender', 'co_borrower_gender', 'borrower_age', 'co_borrower_age', 'occupancy_code', 'rate_spread', 'HOEPA_status', 'property_type', 'lien_status', 'borrower_over_sixtytwo', 'co_borrower_over_sixtytwo', 'LTV_ratio', 'note_date', 'mortgage_term', 'num_units', 'interest_rate', 'note_amount', 'preapproval', 'application_channel', 'AUS_name', 'borrower_credscore_model', 'co_borrower_credscore_model', 'DTI_ratio', 'discount_points', 'rate_period', 'manufactured_home_ownership', 'property_value', 'rural_tract', 'lower_MS_delta', 'Mid_Appalachia', 'persistent_poverty_county', 'concentrated_poverty', 'high_opportunity_area', 'QOZ')
+
+counties <- c(1, 59, 31, 33) # Name county vector to filter dataset to needed counties only 
+
+debt_to_income <- debt_to_income %>%
+  filter(MSA == 47900) 
+
+debt_to_income <- debt_to_income %>%
+  filter(COUNTYFP == counties) # Filtering to needed counties 
+
+# Mutate dataset to match county names of TIGRIS shapefile
+debt_to_income <- debt_to_income %>%
+  mutate(COUNTYFP = 
+    if_else(COUNTYFP == 1, "001", as.character(COUNTYFP)))
+
+debt_to_income <- debt_to_income %>%
+  mutate(COUNTYFP = 
+           if_else(COUNTYFP == 59, "059", as.character(COUNTYFP)))
+    
+debt_to_income <- debt_to_income %>%
+  mutate(COUNTYFP = 
+           if_else(COUNTYFP == 31, "031", as.character(COUNTYFP)))
+
+debt_to_income <- debt_to_income %>%
+  mutate(COUNTYFP = 
+           if_else(COUNTYFP == 33, "033", as.character(COUNTYFP)))
+```
+The debt-to-income ratio dataset did not come with column names, so we used the data documentation to manually input the names. Some of the column names were changed to match the tigris shapefiles which will be used in later mergers.
+
+### Exploratory Data Analysis using the debt-to-income ratio dataset
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+
+# Exploratory data analysis to better understand the data 
+debt_totals <- debt_to_income %>%
+  summarise(n = n())
+  
+debt_to_income %>%
+  filter(purpose_of_loan == 3 | 4 | 5 | 6) %>%
+  ggplot() + 
+  geom_bar(mapping = aes(x = purpose_of_loan)) + 
+  scale_x_continuous(breaks = c(1, 2, 3, 4, 5, 6, 7), minor_breaks = NULL, labels = c("Purchase", "Refinancing", " ", "Home Improvement", " ", " ", "Refinancing (cash-out)")) +
+  ggtitle("Count of borrowers by loan type") 
+  
+```
+Here we can see that most of the loans taken out are for the purposes of refinancing a mortgage, while a smaller number are for initial purchase of homes. 
+
+```{r}
+debt_to_income %>%
+  ggplot() + 
+  geom_hex(mapping = aes(x = percent_minority, y = note_amount)) +
+    scale_fill_continuous(low = "darkgreen", high = "yellow") + 
+  scale_y_continuous() 
+
+
+```
+This hexbin plot demonstrates that there is a concentration of loans among the 300,000 dollar amount in 30-40% minority census tracts. There is also a significant concentration of single family home loans in the near-100% minority census tracts, but we can see that the loans trend much lower for minority census tracts, closer to 100,000 dollars.
+
+### Bank Location Dataset
+
+This dataset provides the exact locations of banks in the District of Columbia. The data is available for access on Washington DC’s open data portal. The locations of the banks are provided by the Department of Insurance Securities and Banking (DISB). The dataset is updated irregularly, as needed, and provides the latitude and longitude coordinates of the banks across DC.  
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+#loading banks data 
+banks <- read.csv("banks.csv")
+
+# replace the white space with underscores and lower-case all of the letters in column names
+names(banks) <- names(banks) %>% 
+  str_replace_all("\\s", "_") %>% 
+  str_to_lower()
+```
+Replacing white space in the dataframe will help to make the dataset more readable with R programs.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+
+#filter the data to rows about banks that have valid longitudes and latitudes
+banks_locations <- banks %>%
+  filter(!is.na(longitude), !is.na(latitude))
+
+#convert longitude and latitude columns into spatial geometries
+banks_locations <- st_as_sf(banks_locations, coords = c("longitude", "latitude"))
+
+#set CRS to 4326 (WGS 84)
+banks_locations <- st_set_crs(banks_locations, value = 4326)
+
+#check the CRS
+st_crs(banks_locations)
+
+#plot map using ggplot2
+banks_locations_1 <- banks_locations %>%
+ggplot()+ 
+  geom_sf(data = DC_tracts) + 
+  geom_sf(data = banks_locations, aes(color = ward), size = 0.6) 
+
+banks_locations_2 <- banks_locations %>%
+  group_by(ward) %>%
+  summarize(n = n()) %>%
+  ggplot() + 
+  geom_col(aes(x= ward, y = n, fill = ward))
+
+banks_locations_1 + banks_locations_2
+
+```
+We can see by this map of the locations of the banks in DC in each census tract that the highest concentration of banks is in Ward 2. This is understandable since the city center is located within Ward 2. This map illustrates the low density of banks in Wards 7, 8 and 4 as compared to the rest of DC, which is also confirmed in the bar graph showing the count of banks in each ward. Wards 7 and 8 have the highest concentration of people in poverty in DC, while Ward 4 is mostly a residential region where the population is majority non-white. This map gives a preview of our future analysis that proximity to banks is demonstrative of economic outcomes in areas. Since access to banking is indicative of one's access to resources, this map shows the relationship between resources and economic outcomes, specifically for high-poverty areas like Ward 7 and 8, where there are high concentrations of people in poverty and low access to banks. 
+
+## Part 04: Data Analysis
+
+### Visualization using banks and debt dataset
+
+```{r}
+# spatial join and census tracts 
+#match CRS of both objects using the given CRS: 4326
+banks_chloro <- st_transform(banks_locations, crs = st_crs(DMV_tracts))
+
+#spatial join bank points and census tracts
+banks_join <- st_join(DMV_tracts, banks_chloro, st_intersects) 
+
+banks_merged_1 <- banks_join %>%
+  group_by(GEOID10) %>%
+  summarize(
+    bank_count = sum(!is.na(name), na.rm = TRUE))
+
+#join census tract back to new dataframe
+banks_merged_1 <- st_join(DMV_tracts, banks_merged_1, join = st_intersects)
+
+```
+
+```{r}
+#choropleth of banks
+banks_merged_2 <- banks_merged_1 %>%
+  select(geometry, bank_count)
+
+p1 <- banks_merged_2 %>%
+  ggplot() +
+  geom_sf(aes(fill = log1p(bank_count)), color = "white", size = 0.1) +
+  scale_fill_gradient(low = "#81FFEF", high = "#F067B4", na.value = "white") +
+  labs(fill = "Log(Bank Count)") +
+  theme_void()
+
+p1
+  
+```
+
+
+### Geospatial Analysis: Bank location in comparison to economic outcomes
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+
+# looking at economic outcomes in relationship to distance to banks 
+banking<- st_transform(banks_join, crs = 4326)
+DC<- st_transform(DC_tracts, crs = 4326)
+
+econ <- debt_tract_2 %>%
+  filter(COUNTYFP10 == "001") %>%
+  st_as_sf(coords = c("INTPTLON10", "INTPTLAT10"), remove = FALSE) %>%
+  st_set_crs(value = 4326) # setting CRS
+
+# close proximity to banks
+banks_filtered<- st_join(banking, DC, left= FALSE)
+banks_econ_1<- st_join(econ, st_buffer(banks_filtered, dist = 400))
+
+max_banks_econ_1<- banks_econ_1 %>%
+  group_by(NAME10) %>%
+  filter(DTI_ratio > 20) %>%
+  summarize(n = n()) 
+
+Banks_Debt_400 <- max_banks_econ_1 %>%
+  ggplot() + 
+  geom_sf(aes(fill = n)) + 
+   scale_fill_gradient(
+    low = "#D1E3F5",
+    high = "blue",
+    na.value = "white"
+  ) +
+  labs(
+    title = "DTI Ratio Above 20 Within 1/4 Mile of a Bank",
+  ) 
+
+# far proximity to banks 
+
+banks_econ_2<- st_join(econ, st_buffer(banks_filtered, dist = 1600))
+
+max_banks_econ_2<- banks_econ_2 %>%
+  group_by(NAME10) %>%
+  filter(DTI_ratio > 20) %>%
+  summarize(n = n()) 
+
+Banks_Debt_1600 <- max_banks_econ_2 %>%
+  ggplot() + 
+  geom_sf(aes(fill = n)) + 
+   scale_fill_gradient(
+    low = "#D1E3F5",
+    high = "blue",
+    na.value = "white"
+  ) + labs(
+    title = "DTI Ratio Above 20 Within 1 Mile of a Bank",
+  ) 
+
+Banks_Debt_400 + Banks_Debt_1600
+
+```
+*** Add description about bank/DTI ratio map here ***
+
+### Geospatial Analysis: Bank location in comparison with rates of depression
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+
+#looking at public health outcomes in relationship to distance to banks 
+
+banking<- st_transform(banks_join, crs = 4326)
+DC<- st_transform(DC_tracts, crs = 4326)
+
+st_transform(Health_map, crs = 4326)
+Health_map <- st_transform(Health_map, crs = st_crs(DMV_tracts))
+Health_map <- st_join(DMV_tracts, Health_map, st_intersects) 
+
+
+Health_DC <- Health_map %>%
+  filter(COUNTYFP10 == "001") %>%
+  filter(MeasureId == "CHD")
+      
+
+#transforming so it matches for the spatial join
+banks_filtered<- st_join(banking, DC, left= FALSE)
+
+st_crs(Health_DC)
+banks_filtered <- st_transform(banks_filtered, crs = 4269)
+
+
+# close proximity to banks
+
+banks_health_1<- st_join(Health_DC, st_buffer(banks_filtered, dist = 400))
+
+max_banks_health_1 <- banks_health_1 %>%
+  group_by(NAME10) %>%
+  summarize(n = n())
+
+
+Banks_CHD_400 <- max_banks_health_1 %>%
+  ggplot() + 
+  geom_sf(aes(fill = n)) + 
+   scale_fill_gradient(
+    low = "#D1E3F5",
+    high = "blue",
+    na.value = "white"
+  ) + labs(
+    title = "People with CHD Within 1/4 Mile of a Bank",
+  ) 
+
+
+# far proximity to banks
+banks_health_2<- st_join(Health_DC, st_buffer(banks_filtered, dist = 1600))
+
+max_banks_health_2 <- banks_health_2 %>%
+  group_by(NAME10) %>%
+  summarize(n = n())
+
+
+Banks_CHD_1600 <- max_banks_health_2 %>%
+  ggplot() + 
+  geom_sf(aes(fill = n)) + 
+   scale_fill_gradient(
+    low = "#D1E3F5",
+    high = "blue",
+    na.value = "white"
+  )+ labs(
+    title = "People with CHD Within 1 Mile of a Bank",
+  ) 
+
+
+Banks_Depression_400 + Banks_Depression_1600
+```
+*** Add Description of maps here ***
+
+### Data Visualization: Mapping debt outcomes by census tract
+Performing a merge with the tigris shapefiles to map debt-to-income ratios as a choropleth and interactive map
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+
+debt_to_income$NAME10 <- as.numeric(debt_to_income$NAME10)
+
+DMV_tracts$NAME10 <- as.numeric(DMV_tracts$NAME10)
+
+debt_to_income$NAME10 <- debt_to_income$NAME10 / 100
+
+#Merging the datasets by census tract name
+debt_tract_2 <- full_join(DMV_tracts, debt_to_income, by = "NAME10")
+
+debt_tract_2 %>%
+  ggplot() + 
+  geom_sf()
+
+# Setting CRS for geospatial visualizations 
+
+debt_tract_2 <- debt_tract_2 %>%
+  st_as_sf(coords = c("INTPTLON10", "INTPTLAT10"), remove = FALSE) %>%
+  st_set_crs(value = 4326) # setting CRS
+
+st_crs(debt_tract_2) # Checking CRS
+
+debt_tract_2 <- st_transform(debt_tract_2, crs = 4326)
+
+st_crs(debt_tract_2)
+
+# Debt-to-income ratio Choropleth
+p3 <- debt_tract_2 %>%
+  ggplot() + 
+  geom_sf(
+    aes(
+      fill = DTI_ratio), color = "White", size = 0.1) +
+  scale_fill_gradient(
+    low = "#81FFEF",
+    high = "#F067B4",
+    na.value = "white"
+  ) +
+  labs(
+    fill = "Debt to Income Ratio"
+  ) +
+  theme_void()
+
+p3
+
+```
+
+From this visualization we can see that the four major health outcomes we chose: diabetes, depression, coronary heart disease, and asthma, are quite evenly spread across the DMV area. While some of the census tracts further from the center of D.C. have fewer health outcomes, there is at least one present in each census tract. The colors for each outcome provide a helpful visualization of the range. 
+
+
+### Data Visualization: An interactive map of debt to income ratios in the DMV
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+
+# Load required libraries
+library(leaflet)
+
+
+# Create a new variable in our spatial object for fill color
+debt_tract_2$FillColor <- colorQuantile("YlOrRd", debt_tract_2$DTI_ratio)(debt_tract_2$DTI_ratio)
+
+# Create a leaflet map
+leaflet(debt_tract_2) %>%
+  
+  # Add the polygons from the spatial object
+  addPolygons(
+    fillColor = ~FillColor,
+    fillOpacity = 0.7,
+    color = "white",
+    weight = 1,
+    popup = ~paste("Debt-to-Income Ratio: ", DTI_ratio)
+  ) %>%
+  
+  # Add legend
+  addLegend(
+    "bottomright",
+    pal = colorQuantile("YlOrRd", debt_tract_2$DTI_ratio),
+    values = ~debt_tract_2$DTI_ratio,
+    title = "Debt-to-Income Ratio",
+    opacity = 1
+  )
+
+```
+This map demonstrates the differences between the debt-to-income ratio for single family home purchases in the DMV area. You can click on each census tract to get specific information from each census tract.
+
+#### Visualizations of health outcomes in the DMV area
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+#Merged CDC Places dataset with census tracts and made graph and choropleths
+
+#Read in CSV of CDC data
+Health1 <- read_csv("PLACES.csv")
+
+#Clean data and get long and lat columns
+Health2 <- Health1 %>%
+  separate(col = Geolocation, into = c("point", "coordinates"), sep = " ", extra = "merge", remove = FALSE) %>%
+  separate(col = coordinates, into = c("longitude", "latitude"), sep = " ", remove = TRUE)
+
+Health2 <- Health2 %>%
+  mutate(longitude = gsub("[()]", "", longitude),
+         latitude = gsub("[()]", "", latitude))
+
+names(Health2) <- names(Health2) %>% 
+  str_to_lower()
+
+#Use consistent health measures: CASTHMA, CHD, Depression, Diabetes, Stroke
+
+Health3 <- Health2 %>%
+  filter(measureid %in% c("CASTHMA", "CHD", "DIABETES", "STROKE", "DEPRESSION") &
+           complete.cases(longitude, latitude))
+
+#convert longitude and latitude columns into spatial geometries
+sf_Health <- st_as_sf(Health3, coords = c("longitude", "latitude"))
+#set CRS to 4326 (WGS 84)
+sf_Health <- st_set_crs(sf_Health, value = 4326)
+#check the CRS
+st_crs(sf_Health)
+
+#plot map using ggplot2
+sf_Health |>
+  ggplot() +
+  geom_sf(
+    aes(color = short_question_text), alpha = 0.4, size = 2) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#Perform a Spatial Join and Create Choropleth
+
+#match cRS
+sf_Health2 <- st_transform(sf_Health, crs = st_crs(DMV_tracts))
+
+#spatial_join health points and census tracts
+Health_join <- st_join(sf_Health2, DMV_tracts, st_intersects)
+
+#calculate the count of cancer and depression in new dataframe
+health_merged <- Health_join |>
+  group_by(NAME10) |>
+  mutate(
+    calculated_value = totalpopulation * (data_value / 100)
+  )
+
+#join census tract back to new dataframe
+health_merged2 <- st_join(DMV_tracts, health_merged, join = st_intersects)
+
+#create choropleth maps
+
+p4 <- health_merged2 %>%
+  ggplot() + 
+  geom_sf(
+    aes(
+      fill = calculated_value), color = "white", size = 0.1) +
+  scale_fill_continuous(
+    trans = "log",
+    breaks = c(50, 100, 300, 1000, 2000),
+  ) +
+  labs(
+    fill = "Health Measures Count") +
+  theme_void()
+
+p4
+
+combined_plot <- p3 + p4
+
+combined_plot
+
+```
+*** Add description of health oucome plots here ***
+
+
+#### Merging Health and Debt-to-Income dataset
+Performing a spatial join of the debt-to-income dataset and the health outcomes dataset 
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+
+#Merging health dataset with debt_tract_2 
+
+#Converting long and lat coordinates to sf objects
+debt_tract_2_sf <- st_as_sf(debt_tract_2, coords = c("INTPTLON10", "INTPTLAT10"), crs = 4326)
+
+# Convert 'Geolocation' column to an sf object
+Health_sf <- st_as_sf(Health, wkt = "Geolocation", crs = 4326)
+
+#Confirm if health and debt use the same coordinate reference systems (crs) 
+
+#They do not. 
+st_crs(debt_tract_2_sf)
+st_crs(Health_sf)
+
+#Transform debt dataset to match health
+debt_tract_2_sf <- st_transform(debt_tract_2_sf, st_crs(Health_sf))
+
+#Reconfirm if they have the same crs.
+#Now they do.
+st_crs(debt_tract_2_sf)
+st_crs(Health_sf)
+
+#Spatial Join
+health_debt <- st_join(debt_tract_2_sf, Health_sf, join = st_intersects)
+
+```
+
+### Machine Learning Models
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+library(tidymodels)
+set.seed(102102938)
+
+split <- initial_split(data = debt_to_income, prop = 0.75)
+
+debt_train <- training(x = split)
+debt_test <- testing(x = split)
+
+
+```
+
+### Machine Learning Model #1: Predicting percentage of minorities in a census tract using economic data (single family home loan debt and other economic observations)
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+
+debt_rec <- recipe(percent_minority ~ borrower_income + borrower_age + borrower_income_ratio + tract_income_ratio + DTI_ratio + interest_rate + note_amount, data = debt_train) %>%
+  step_normalize(all_numeric_predictors()) %>%
+  step_corr(all_numeric_predictors())
+
+# Creating tuning grid for lasso model
+lasso_grid <- grid_regular(penalty())
+
+# LASSO model
+lasso_mod <- linear_reg(penalty = tune(), mixture = 1) %>% 
+  set_engine("glmnet")
+
+# LASSO workflow
+lasso_wf <- workflow() %>%
+  add_recipe(debt_rec) %>%
+  add_model(lasso_mod) 
+
+folds <- vfold_cv(data = debt_train, v = 10, repeats = 1)
+
+# LASSO fit
+lasso_fit <- lasso_wf %>%
+  tune_grid(
+    resamples = folds,
+    grid = lasso_grid, 
+    metrics = metric_set(rmse, mae), 
+    control = control_grid(save_pred = TRUE))
+
+# Evaluating models
+lasso_metrics <- lasso_fit %>%
+  collect_metrics(summarize = TRUE) 
+
+lasso_fit %>%
+  select_best(metric = "rmse")
+
+# The RMSE of this model's best fit is around 22. 
+
+```
+The average RMSE across 10 folds for the best fit model is around 22. This suggests that the average difference between the percentage of minorities in a census tract predicted by the model and the true percentage is 22 percentage points. 22 percentage points is a significant error. 
+
+Taking the results from this prediction using our debt dataset, we decided to try a different type of model. LASSO regression is best for linear relationships, and it makes sense that this model may not capture all of the variation in the percentage of minorities across all census tracts in the DMV. 
+
+For our next machine learning model, we will take what we've learned from the performance of this model to predict something a bit more complex: health outcomes across the DMV using economic data. 
+
+### Machine Learning Model #2: Predicting rates of depression in a census tract using economic predictors from the debt-to-income dataset
+
+We've chosen a random forest model to model the relationship between economic factors and depression because random forest models adapt easily to many predictors, and nonlinear relationships. Below, we test two different random forest models and refine one with hyperparameter tuning to get a model with refined predictions of rates of depression in a census tract. 
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+
+# Filtering dataset for second machine learning  model
+
+# We want only observations for rates of depression, and to exclude columns that have all values as NA or that are not interpretable by random forest modeling
+depression_debt <- health_debt %>%
+  drop_na(Data_Value) %>%
+  filter(MeasureId == "DEPRESSION") %>%
+  select(-Data_Value_Footnote, -Data_Value_Footnote_Symbol) %>%
+  st_drop_geometry()
+
+# Omit all NA values from dataset
+depression_debt <- na.omit(depression_debt)
+
+set.seed(12122023)
+split2 <- initial_split(data = depression_debt, prop = 0.8)
+
+depression_train2 <- training(x = split2)
+depression_test2 <- testing(x = split2)
+
+
+# Train the initial randomForest model with specified predictors
+rf_mod <- randomForest(Data_Value ~ borrower_income + borrower_age + borrower_income_ratio + tract_income_ratio + DTI_ratio + interest_rate + note_amount + property_value + percent_minority, data = depression_train2)
+
+rf_mod 
+
+```
+This model only explains about 77.6% of the variance in the rates of depression in each census tract. We think this is because there is a lack of tuning the model, and because we limited the number of predictors such that there was not enough information. 
+
+Next, we will try a similar random forest model, but with more predictors and some hyperparameter tuning to find the best number of mtrys. 
+
+### Machine Learning Model #3: Predicting rates of depression in a census tract using economic predictors from the debt-to-income dataset
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+# Trying some tuning to see if we can find the best amount of mtrys to use for the model
+bestmtry <- tuneRF(depression_train2,depression_train2$Data_Value,stepFactor = 2, improve = 0.01, trace = TRUE, plot = T, doBest = TRUE) 
+
+# tuneRF shows that the best amount of mtrys is 32. Running random forest model again with 32 mtrys to see if it further optimizes the model. 
+best_mtry <- 32
+
+rf_mod3 <- randomForest(Data_Value ~., data = depression_train2, mtry = best_mtry)
+
+rf_mod3
+
+```
+
+We used hyperparameter tuning to find the best number of mtrys for the model, and plotted the result. After finding that the best number of mtrys was 32, we added this parameter to the model. As a result, this model shows great improvement from the previous, explaining 99.99% of the variance. We can use this model to predict health outcomes on the testing dataset. 
+
+```{r}
+
+predicted_values <- predict(rf_mod3, newdata = depression_test2, type = "class")
+
+test_predictions <- bind_cols(
+  depression_test2, predicted_values)
+
+test_predictions <- test_predictions %>%
+  rename(.pred = ...99)
+
+metrics(test_predictions, truth = Data_Value, estimate = .pred)
+
+prediction_table <- tibble(test_predictions$Data_Value, test_predictions$.pred)
+```
+The prediction table shows that we have successfully trained a model that predicts 99% of the variance in our variable of interest, which reflects the rates of depression in each census tract. 
+
+This model used predictors such as percent minority census tracts, debt to income ratio, median income of a census tract, and many other racial and economic factors in the data to be able to predict the depression rates in a census tract. 
+
+Using a machine learning model that adapts to non-linear relationships has shown us that there is indeed a relationship between economic/racial factors and public health outcomes, such as depression. 
+
+# Cluster Analysis
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+
+# filtering the data to use for the cluster analyis
+dti_data <- debt_to_income %>%
+  select(percent_minority, DTI_ratio)
+
+# creating the recipe
+dti_pca_rec <- recipe(~ ., data = dti_data) %>%
+  step_pca(all_numeric(), id = "pca") %>%
+  prep(data = dti_data) %>%
+  bake(new_data = dti_data) 
+
+
+#create the function 
+debt_pca_fun<- function(DTI, df){
+  debt_pca<- df %>%
+    replace(is.na(.), 0) %>%
+    filter(DTI_ratio == DTI) 
+  
+debt_pca_rec <- recipe(~ ., data = dti_data) %>%
+    step_pca(all_numeric(), num_comp = 2) %>%
+    prep(data = dti_data) %>%
+    bake(new_data = dti_data) %>%
+    select(PC1, PC2)
+    
+
+kmeans_rec<- recipe(~ ., data = dti_data) %>%
+  step_select(all_numeric())
+  
+  debt_pca_spec <- k_means(
+  num_clusters = 10
+) %>%
+  set_engine("stats", nstart = 100)
+
+debt_pca_workflow <- workflow(
+  preprocessor = kmeans_rec, 
+  spec = debt_pca_spec
+)
+
+final_fit <- debt_pca_workflow %>%
+  fit(data = dti_data)
+
+debt_clusters <- 
+  bind_cols(dti_data, debt_pca_rec, cluster = final_fit %>%
+    extract_cluster_assignment() %>%
+    pull(.cluster) )
+
+return(debt_clusters)
+}
+
+#mapping the output 
+DTI<- 20:50
+set.seed(20220413)
+final_result <- map_dfr(.x = DTI, .f = debt_pca_fun, df = debt_to_income)
+print(final_result)
+  
+```
+
+```{r}
+#animated scatterplot
+
+clus_plot <- ggplot(
+  final_result,
+  aes(PC1, PC2, color = percent_minority, frame = DTI_ratio)
+) +
+  geom_point() +
+  labs(
+    title = "Animated Scatter Plot of Percent Minority across DTI_ratios",
+    x = "PC1",
+    y = "PC2",
+    color = "percent minority"
+  ) +
+  transition_states(DTI_ratio) +
+  ease_aes('linear') +
+  enter_fade() +
+  exit_fade() +
+  theme_minimal()
+
+#save animation as gif
+animate(
+  clus_plot,
+  duration = 10,
+  fps = 20,
+  width = 400,
+  height = 400,
+  renderer = gifski_renderer()
+)
+anim_save("clust_gif.gif")
+```
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+# mapping the cluster plot 
+clust_plot <- final_result %>%
+  ggplot() +
+  geom_point(
+    mapping = aes(x = PC1, y = PC2, color = percent_minority),
+    alpha = 0.5, size = 0.1
+  ) +
+  labs(
+    title = "Debt-to-Income Ratios in the DMV Area Based on Percent Minority Population",
+    x = "PC1",
+    y = "PC2"
+  ) + 
+  theme_classic()
+
+clust_plot
+```
+
+```{r}
+# Within Sum of Squares (WSS)
+wss <- fviz_nbclust(
+  dti_data,
+  FUN = hcut,
+  k.max = 10,
+  method = "wss",
+  hc_func = "hclust",
+  hc_method = "ward.D2",
+  hc_metric = "euclidean"
+)
+print(wss)
+```
+
+```{r}
+# Silhouette Distance
+sil <- fviz_nbclust(
+  dti_data,
+  FUN = hcut,
+  k.max = 10,
+  method = "silhouette",
+  hc_func = "hclust",
+  hc_method = "ward.D2",
+  hc_metric = "euclidean"
+)
+print(sil)
+```
+
+```{r}
+#perform hierarchial clustering
+hclust_euc <- hclust(dist(dti_data), method = "ward.D2")
+
+#plot dendrogram
+plot(hclust_euc, main = "Cluster Dendogram", sub = "")
+rect.hclust(hclust_euc, k = 10, border = "purple")
+```
+
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+#perform hierarchial clustering
+d <- dist(dti_data, method = "euclidean")
+hclust_euc<- hclust(d, "ward.D2")
+
+#plot dendrogram
+plot(hclust_euc, cex = 0.6, hang = -1, main = "Cluster Dendogram")
+rect.hclust(hclust_euc, k = 4, border = "purple")
+
+```
+
+
+# cluster Analysis
+```{r}
+# PCA variance check
+
+#filter dataframe to DTI ratios 20 and over
+
+#concatenate two columns to make matching columns with Health dataset
+debt_to_income$CountyFIPS <- paste0(debt_to_income$state_postal_code, debt_to_income$COUNTYFP)
+
+#filter out health dataset to append to DTI data
+Health_append <- Health %>%
+  select(CountyFIPS, MeasureId)
+
+DTI_clust <- debt_to_income %>%
+  select(DTI_ratio, NAME10, CountyFIPS, percent_minority, concentrated_poverty)
+
+#make recipe
+DTI_clust_rec <- recipe(~., DTI_clust) %>%
+  step_pca(all_numeric_predictors(), id = "pca_") %>%
+  prep()
+
+#variance
+tidy(DTI_clust_rec, number = 1, type = "variance")
+  
+#bake to get principal components
+DTI_pcs <- DTI_clust_rec %>%
+  bake(new_data = NULL)
+
+#merge dataframes
+DTI_Health_clust <- merge(DTI_pcs, Health_append, by = "CountyFIPS")
+
+#scatter plot with PC1 on x-axis and PC2 on y-axis with Health measures as color
+p5 <- ggplot(DTI_Health_clust, aes(x = PC1, y = PC2, color = MeasureId)) +
+  geom_point() +
+  labs(x = "Principal Component 1", 
+       y = "Principal Component 2") +
+theme_minimal()
+
+p5
+
+```
+This scatterplot shows healthmeasures clustered together based upon the PCA variance of Debt-to-income variables.
+
+```{r}
+DTI_Health_clust2 <- merge(debt_to_income, Health_append, by = "CountyFIPS")
+  
+
+DTI_fun <- function(DTI_ratio, DTI_Health_clust2) {
+  #pca
+DTI_pca_rec <- recipe(~., DTI_Health_clust2)
+
+DTI_pca_trans <- DTI_pca_rec |>
+  step_zv(all_numeric_predictors()) |>
+  step_normalize(all_numeric_predictors()) |>
+  step_pca(all_numeric_predictors(), id = "pca_")
+
+DTI_pca_estimates <- prep(DTI_pca_trans, training = DTI_Health_clust2)
+
+DTI_Health_data <- bake(DTI_pca_estimates, DTI_Health_clust2)
+
+#clusters
+DTI_Health_spec <- k_means(
+  num_clusters = 4) |>
+  set_engine(
+    "stats"
+  )
+
+#fit the final model
+kmeans_pca_fit <- DTI_Health_spec |>
+  fit(~., data = DTI_Health_clust2)
+
+clusters <- extract_cluster_assignment(kmeans_pca_fit)
+summary(clusters)
+
+}
+```
