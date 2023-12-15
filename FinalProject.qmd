@@ -265,23 +265,6 @@ banks_merged_1 <- st_join(DMV_tracts, banks_merged_1, join = st_intersects)
 
 ```
 
-```{r}
-#choropleth of banks
-banks_merged_2 <- banks_merged_1 %>%
-  select(geometry, bank_count)
-
-p1 <- banks_merged_2 %>%
-  ggplot() +
-  geom_sf(aes(fill = log1p(bank_count)), color = "white", size = 0.1) +
-  scale_fill_gradient(low = "#81FFEF", high = "#F067B4", na.value = "white") +
-  labs(fill = "Log(Bank Count)") +
-  theme_void()
-
-p1
-  
-```
-
-
 #Geospatial Analysis with Banks
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 
@@ -463,10 +446,6 @@ This geospatial visualization demonstrates the range of debt-to-income ratios by
 
 ### Using Leaflet to create an interactive map of debt to income ratios in the DMV
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
-
-# Load required libraries
-library(leaflet)
-
 
 # Create a new variable in our spatial object for fill color
 debt_tract_2$FillColor <- colorQuantile("YlOrRd", debt_tract_2$DTI_ratio)(debt_tract_2$DTI_ratio)
@@ -787,6 +766,8 @@ final_result <- map_dfr(.x = DTI, .f = debt_pca_fun, df = debt_to_income)
 print(final_result)
   
 ```
+
+
 ```{r}
 #animated scatterplot
 
@@ -836,56 +817,6 @@ clust_plot <- final_result %>%
 
 clust_plot
 ```
-
-```{r}
-# Within Sum of Squares (WSS)
-wss <- fviz_nbclust(
-  dti_data,
-  FUN = hcut,
-  k.max = 10,
-  method = "wss",
-  hc_func = "hclust",
-  hc_method = "ward.D2",
-  hc_metric = "euclidean"
-)
-print(wss)
-```
-
-```{r}
-# Silhouette Distance
-sil <- fviz_nbclust(
-  dti_data,
-  FUN = hcut,
-  k.max = 10,
-  method = "silhouette",
-  hc_func = "hclust",
-  hc_method = "ward.D2",
-  hc_metric = "euclidean"
-)
-print(sil)
-```
-
-```{r}
-#perform hierarchial clustering
-hclust_euc <- hclust(dist(dti_data), method = "ward.D2")
-
-#plot dendrogram
-plot(hclust_euc, main = "Cluster Dendogram", sub = "")
-rect.hclust(hclust_euc, k = 10, border = "purple")
-```
-
-
-```{r echo=FALSE, warning=FALSE, message=FALSE}
-#perform hierarchial clustering
-d <- dist(dti_data, method = "euclidean")
-hclust_euc<- hclust(d, "ward.D2")
-
-#plot dendrogram
-plot(hclust_euc, cex = 0.6, hang = -1, main = "Cluster Dendogram")
-rect.hclust(hclust_euc, k = 4, border = "purple")
-
-```
-
 
 # cluster Analysis
 ```{r}
@@ -962,5 +893,7 @@ clusters <- extract_cluster_assignment(kmeans_pca_fit)
 summary(clusters)
 
 }
+
+
 
 ```
