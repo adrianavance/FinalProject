@@ -263,7 +263,7 @@ banks_merged_1 <- st_join(DMV_tracts, banks_merged_1, join = st_intersects)
 ```
 
 ```{r}
-#choropleth
+#choropleth of banks
 banks_merged_2 <- banks_merged_1 %>%
   select(geometry, bank_count)
 
