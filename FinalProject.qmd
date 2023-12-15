@@ -898,3 +898,10 @@ p5
 ```
 This scatterplot shows health measures clustered together based upon the PCA variance of Debt-to-income variables.However, the nonsensical nature of these graphics suggest that the cluster analysis that we fitted to these indciators was apt at predicting the relationship between these measeres. 
 
+####Data Interpretation and Analysis
+
+Our research aimed to document and analyze the relationships between health outcomes, economic conditions, geography, and demographics across various census tracts in the DMV area. Through this exploration, we found several patterns suggesting correlative relationships that could be invaluable when guiding policy decisions and healthcare initiatives.
+
+##Discussion of Results
+
+##Interpreting the findings:
