@@ -905,9 +905,29 @@ DTI_Health_clust <- merge(DTI_pcs, Health_append, by = "CountyFIPS")
 #scatter plot with PC1 on x-axis and PC2 on y-axis with Health measures as color
 p5 <- ggplot(DTI_Health_clust, aes(x = PC1, y = PC2, color = MeasureId)) +
   geom_point() +
-  labs(x = "Principal Component 1",
+  labs(x = "Principal Component 1", 
        y = "Principal Component 2") +
 theme_minimal()
 p5
+```
+```{r}
+DTI_Health_clust2 <- merge(debt_to_income, Health_append, by = "CountyFIPS")
+  
+
+DTI_fun <- function(DTI_ratio, DTI_Health_clust2) {
+  #pca
+DTI_pca_rec <- recipe(~., DTI_Health_clust2)
+
+DTI_pca_trans <- DTI_pca_rec |>
+  step_normalize(all_numeric()) |>
+  step_pca(all_numeric_predictors(), id = "pca_")
+
+DTI_pca_estimates <- prep(DTI_pca_trans, training = DTI_Health_clust2)
+
+DTI_Health_data <- bake(DTI_pca_estimates, DTI_Health_clust2)
+
+#clusters
+DTI_Health_spec <- 
+}
 ```
 
