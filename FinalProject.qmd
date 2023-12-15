@@ -260,7 +260,6 @@ banks_merged_1 <- banks_join %>%
 #join census tract back to new dataframe
 banks_merged_1 <- st_join(DMV_tracts, banks_merged_1, join = st_intersects)
 
-
 ```
 
 ```{r}
@@ -308,7 +307,10 @@ Banks_Debt_400 <- max_banks_econ_1 %>%
     low = "#D1E3F5",
     high = "blue",
     na.value = "white"
-  )
+  ) +
+  labs(
+    title = "DTI Ratio Above 20 Within 1/4 Mile of a Bank",
+  ) 
 
 # far proximity to banks 
 
@@ -326,7 +328,9 @@ Banks_Debt_1600 <- max_banks_econ_2 %>%
     low = "#D1E3F5",
     high = "blue",
     na.value = "white"
-  )
+  ) + labs(
+    title = "DTI Ratio Above 20 Within 1 Mile of a Bank",
+  ) 
 
 Banks_Debt_400 + Banks_Debt_1600
 
@@ -374,7 +378,9 @@ Banks_Depression_400 <- max_banks_health_1 %>%
     low = "#D1E3F5",
     high = "blue",
     na.value = "white"
-  )
+  ) + labs(
+    title = "People Experiencing Depression Within 1/4 Mile of a Bank",
+  ) 
 
 
 # far proximity to banks
@@ -392,7 +398,9 @@ Banks_Depression_1600 <- max_banks_health_2 %>%
     low = "#D1E3F5",
     high = "blue",
     na.value = "white"
-  )
+  )+ labs(
+    title = "People Experiencing Depression Within 1 Mile of a Bank",
+  ) 
 
 
 Banks_Depression_400 + Banks_Depression_1600
@@ -724,9 +732,11 @@ Using a machine learning model that adapts to non-linear relationships has shown
 # Cluster Analysis
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 
+# filtering the data to use for the cluster analyis
 dti_data <- debt_to_income %>%
   select(percent_minority, DTI_ratio)
 
+# creating the recipe
 dti_pca_rec <- recipe(~ ., data = dti_data) %>%
   step_pca(all_numeric(), id = "pca") %>%
   prep(data = dti_data) %>%
@@ -770,17 +780,16 @@ debt_clusters <-
 return(debt_clusters)
 }
 
-#lastly, mapping the output
+#mapping the output 
 DTI<- 1:100
 set.seed(20220413)
 final_result <- map_dfr(.x = DTI, .f = debt_pca_fun, df = debt_to_income)
 print(final_result)
   
-
-
 ```
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
+# mapping the cluster plot 
 clust_plot <- final_result %>%
   ggplot() +
   geom_point(
@@ -799,7 +808,7 @@ clust_plot
 
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
-
+# creating a Cluster Denodgram 
 d <- dist(dti_data, method = "euclidean")
 hclust_euc<- hclust(d, "ward.D2")
 plot(hclust_euc, cex = 0.6, hang = -1, main = "Cluster Dendogram")
