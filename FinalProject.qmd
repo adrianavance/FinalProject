@@ -240,13 +240,15 @@ st_crs(banks_locations)
 banks_locations_1 <- banks_locations %>%
 ggplot()+ 
   geom_sf(data = DC_tracts) + 
-  geom_sf(data = banks_locations, aes(color = ward), size = 0.6) 
+  geom_sf(data = banks_locations, aes(color = ward), size = 0.6) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 banks_locations_2 <- banks_locations %>%
   group_by(ward) %>%
   summarize(n = n()) %>%
   ggplot() + 
-  geom_col(aes(x= ward, y = n, fill = ward))
+  geom_col(aes(x= ward, y = n, fill = ward)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 banks_locations_1 + banks_locations_2
 
@@ -839,7 +841,7 @@ debt_to_income$CountyFIPS <- paste0(debt_to_income$state_postal_code, debt_to_in
 
 #filter out health dataset to append to DTI data
 Health_append <- Health %>%
-  select(CountyFIPS, MeasureId, Data_Value,)
+  select(CountyFIPS, MeasureId, Data_Value, total_population)
 
 DTI_clust <- debt_to_income %>%
   select(DTI_ratio, NAME10, CountyFIPS, percent_minority, concentrated_poverty) %>%
