@@ -112,7 +112,7 @@ We chose asthma, coronary heart disease, stroke, and depression as our health ou
 
 #### Health Outcomes Distribution Map
 
-```{r}
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 # Change geometry to be readable by SF
 
 Health_map <- Health %>%
@@ -193,7 +193,7 @@ debt_to_income %>%
 ```
 Here we can see that most of the loans taken out are for the purposes of refinancing a mortgage, while a smaller number are for initial purchase of homes. 
 
-```{r}
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 debt_to_income %>%
   ggplot() + 
   geom_hex(mapping = aes(x = percent_minority, y = note_amount)) +
@@ -252,7 +252,7 @@ banks_locations_1 + banks_locations_2
 We can see by this map of the locations of the banks in DC in each census tract that the highest concentration of banks is in Ward 2. This is understandable since the city center is located within Ward 2. This map illustrates the low density of banks in Wards 7, 8 and 4 as compared to the rest of DC, which is also confirmed in the bar graph showing the count of banks in each ward. Wards 7 and 8 have the highest concentration of people in poverty in DC, while Ward 4 is mostly a residential region where the population is majority non-white. This map gives a preview of our future analysis that proximity to banks is demonstrative of economic outcomes in areas. Since access to banking is indicative of one's access to resources, this map shows the relationship between resources and economic outcomes, specifically for high-poverty areas like Ward 7 and 8, where there are high concentrations of people in poverty and low access to banks. 
 
 
-```{r}
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 # spatial join and census tracts 
 #match CRS of both objects using the given CRS: 4326
 banks_chloro <- st_transform(banks_locations, crs = st_crs(DMV_tracts))
@@ -556,6 +556,7 @@ combined_plot <- p3 + p4
 combined_plot
 
 ```
+This side by side comparison shows, in some instances, that tracts with lower DTI ratios have a higher percentage of health conditions. This may be because tracts where a majority of people are not able to leverage more debt against their income are worse off in terms of their health.
 
 #### Merging Health and Debt-to-Income dataset
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
@@ -693,7 +694,7 @@ rf_mod3
 
 We used hyperparameter tuning to find the best number of mtrys for the model, and plotted the result. After finding that the best number of mtrys was 32, we added this parameter to the model. As a result, this model shows great improvement from the previous, explaining 99.99% of the variance. We can use this model to predict health outcomes on the testing dataset. 
 
-```{r}
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 
 predicted_values <- predict(rf_mod3, newdata = depression_test2, type = "class")
 
@@ -735,6 +736,7 @@ debt_pca_fun<- function(DTI, df){
   
 debt_pca_rec <- recipe(~ ., data = dti_data) %>%
     step_pca(all_numeric(), num_comp = 2) %>%
+    step_normalize(all_predictors()) %>%
     prep(data = dti_data) %>%
     bake(new_data = dti_data) %>%
     select(PC1, PC2)
@@ -744,7 +746,7 @@ kmeans_rec<- recipe(~ ., data = dti_data) %>%
   step_select(all_numeric())
   
   debt_pca_spec <- k_means(
-  num_clusters = 10
+  num_clusters = 4
 ) %>%
   set_engine("stats", nstart = 100)
 
@@ -773,7 +775,7 @@ print(final_result)
 ```
 
 
-```{r}
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 #animated scatterplot
 
 clus_plot <- ggplot(
@@ -810,21 +812,22 @@ anim_save("clust_gif.gif")
 clust_plot <- final_result %>%
   ggplot() +
   geom_point(
-    mapping = aes(x = PC1, y = PC2, color = percent_minority),
+    mapping = aes(x = percent_minority, y = DTI_ratio, color = cluster),
     alpha = 0.5, size = 0.1
   ) +
   labs(
     title = "Debt-to-Income Ratios in the DMV Area Based on Percent Minority Population",
-    x = "PC1",
-    y = "PC2"
+    x = "Percent Minority",
+    y = "DTI Ratio"
   ) + 
   theme_classic()
 
 clust_plot
 ```
+This plot shows the variance explained by our principal component analysis clusters. We can see here that the variance increases in our clusters as the debt to income ratio increases. Three of our clusters show uniformity in structure across the plot, however Cluster 4 is condensed around a low debt to income ratio and a low percentage of minorities living in a census tract. DTI ratio increases variance, while percent minority decreases variance. These results indicate that perhaps the variation in debt to income ratios is not well explained by the racial demographics of a census tract. This is a bit contradictory to our hypothesis, but this could also be an indicator that there are other economic outcomes that correlate with debt to income ratios better. The visual nature of the plot suggests that perhaps kmeans clustering is not the best method for analyzing our data. Perhaps, if we had used a different predictor or clustered our data based on health conditions, we would have found a better relationship between our variables. 
 
 # cluster Analysis
-```{r}
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 # PCA variance check
 
 #filter dataframe to DTI ratios 20 and over
@@ -834,14 +837,16 @@ debt_to_income$CountyFIPS <- paste0(debt_to_income$state_postal_code, debt_to_in
 
 #filter out health dataset to append to DTI data
 Health_append <- Health %>%
-  select(CountyFIPS, MeasureId)
+  select(CountyFIPS, MeasureId, Data_Value,)
 
 DTI_clust <- debt_to_income %>%
-  select(DTI_ratio, NAME10, CountyFIPS, percent_minority, concentrated_poverty)
+  select(DTI_ratio, NAME10, CountyFIPS, percent_minority, concentrated_poverty) %>%
+  mutate(MeasureId == make.unique(MeasureId))
 
 #make recipe
 DTI_clust_rec <- recipe(~., DTI_clust) %>%
   step_pca(all_numeric_predictors(), id = "pca_") %>%
+  step_normalize(all_predictors()) %>%
   prep()
 
 #variance
@@ -864,41 +869,5 @@ theme_minimal()
 p5
 
 ```
-This scatterplot shows healthmeasures clustered together based upon the PCA variance of Debt-to-income variables.
+This scatterplot shows health measures clustered together based upon the PCA variance of Debt-to-income variables.However, the nonsensical nature of these graphics suggest that the cluster analysis that we fitted to these indciators was apt at predicting the relationship between these measeres. 
 
-```{r}
-DTI_Health_clust2 <- merge(debt_to_income, Health_append, by = "CountyFIPS")
-  
-
-DTI_fun <- function(DTI_ratio, DTI_Health_clust2) {
-  #pca
-DTI_pca_rec <- recipe(~., DTI_Health_clust2)
-
-DTI_pca_trans <- DTI_pca_rec |>
-  step_zv(all_numeric_predictors()) |>
-  step_normalize(all_numeric_predictors()) |>
-  step_pca(all_numeric_predictors(), id = "pca_")
-
-DTI_pca_estimates <- prep(DTI_pca_trans, training = DTI_Health_clust2)
-
-DTI_Health_data <- bake(DTI_pca_estimates, DTI_Health_clust2)
-
-#clusters
-DTI_Health_spec <- k_means(
-  num_clusters = 4) |>
-  set_engine(
-    "stats"
-  )
-
-#fit the final model
-kmeans_pca_fit <- DTI_Health_spec |>
-  fit(~., data = DTI_Health_clust2)
-
-clusters <- extract_cluster_assignment(kmeans_pca_fit)
-summary(clusters)
-
-}
-
-
-
-```
