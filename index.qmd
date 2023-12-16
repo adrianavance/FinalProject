@@ -15,12 +15,6 @@ format:
 
 In this project, we will examine the relationship between economic status and public health outcomes in the D.C. area. We seek to look at several different factors, analyzing economic status through both mortgage loan debt in the DMV and bank locations in the District of Columbia. The relationship between economic indicators and public health outcomes is well-studied and has great implications for the policy world. Economic success has been shown to be associated with better public health outcomes. Additionally, a healthy economy is usually associated with a healthier U.S. population. On a micro-economic level, this may mean that individual economic hardship is associated with worse public health outcomes. This is the question that our project intends to investigate-- are census tracts with higher levels of mortgage debt, or fewer proximate banks, also more prone to negative public health outcomes such as higher rates of heart disease or depression?
 
-#### Background:
-
-```         
-In this project, we will examine the relationship between economic status and public health outcomes in the D.C. area. We seek to look at several different factors, analyzing economic status through both mortgage loan debt in the DMV and bank locations in the District of Columbia. The relationship between economic indicators and public health outcomes is well-studied and has great implications for the policy world. Economic success has been shown to be associated with better public health outcomes. Additionally, a healthy economy is usually associated with a healthier U.S. population. On a microeconomic level, this may mean that individual economic hardship is associated with worse public health outcomes. This is the question that our project intends to investigate– are census tracts with higher levels of mortgage debt or fewer proximate banks also more prone to negative public health outcomes such as higher rates of heart disease or depression? 
-```
-
 #### Literature Review:
 
 [Economic influences on population health in the United States: Toward policymaking driven by data and evidence.](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7467305/#:~:text=Falling%20incomes%20can%20reduce%20access)
@@ -36,10 +30,6 @@ This article from the Center for American Progress makes the case that social, e
 In this analysis from the Brookings Institute, researchers examined the relationship between race and debt across neighborhoods in America, particularly through the lens of access to banking services. Their findings showed that in majority Black and Hispanic neighborhoods there is a greatly reduced presence of banks as compared to white neighborhoods. These disparities aligned with observed differences in interest rates on business loans and growth of local businesses in majority Black neighborhoods as well, indicating a relationship between neighborhood racial demographics and concentration of banks as indicators for access to financial services.
 
 [Bank Branch Presence and Access to Credit in Low‐ to Moderate‐Income Neighborhoods](https://onlinelibrary.wiley.com/doi/abs/10.1111/j.1538-4616.2010.00343.x)
-
-```         
-In this analysis from the Brookings Institute, researchers examined the relationship between race and debt across neighborhoods in America, particularly through the lens of access to banking services. Their findings showed that in majority Black and Hispanic neighborhoods, there is a greatly reduced presence of banks as compared to white neighborhoods. These disparities aligned with observed differences in interest rates on business loans and growth of local businesses in majority Black neighborhoods as well, indicating a relationship between neighborhood racial demographics and concentration of banks as indicators for access to financial services.
-```
 
 This article presents evidence that shows access to credit in low-to-moderate income neighborhoods is correlated with the presence of bank branches. Some suggest that this is due to the presence of a bank indicating information costs, as being closer to a bank provides people access to information about credit and loans. This study reveals that mortgage loan transactions increase in low-to-moderate income neighborhoods when there is a bank branch present.
 
