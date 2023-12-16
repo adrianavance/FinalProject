@@ -13,12 +13,13 @@ format:
 
 ### Background and Literature Review
 
-<<<<<<< HEAD
 In this project, we will examine the relationship between economic status and public health outcomes in the D.C. area. We seek to look at several different factors, analyzing economic status through both mortgage loan debt in the DMV and bank locations in the District of Columbia. The relationship between economic indicators and public health outcomes is well-studied and has great implications for the policy world. Economic success has been shown to be associated with better public health outcomes. Additionally, a healthy economy is usually associated with a healthier U.S. population. On a micro-economic level, this may mean that individual economic hardship is associated with worse public health outcomes. This is the question that our project intends to investigate-- are census tracts with higher levels of mortgage debt, or fewer proximate banks, also more prone to negative public health outcomes such as higher rates of heart disease or depression?
 
-####Background:
-	In this project, we will examine the relationship between economic status and public health outcomes in the D.C. area. We seek to look at several different factors, analyzing economic status through both mortgage loan debt in the DMV and bank locations in the District of Columbia. The relationship between economic indicators and public health outcomes is well-studied and has great implications for the policy world. Economic success has been shown to be associated with better public health outcomes. Additionally, a healthy economy is usually associated with a healthier U.S. population. On a microeconomic level, this may mean that individual economic hardship is associated with worse public health outcomes. This is the question that our project intends to investigate– are census tracts with higher levels of mortgage debt or fewer proximate banks also more prone to negative public health outcomes such as higher rates of heart disease or depression? 
->>>>>>> 090cb1a9bdb6766a156fce47bdeebf7b3ba68251
+#### Background:
+
+```         
+In this project, we will examine the relationship between economic status and public health outcomes in the D.C. area. We seek to look at several different factors, analyzing economic status through both mortgage loan debt in the DMV and bank locations in the District of Columbia. The relationship between economic indicators and public health outcomes is well-studied and has great implications for the policy world. Economic success has been shown to be associated with better public health outcomes. Additionally, a healthy economy is usually associated with a healthier U.S. population. On a microeconomic level, this may mean that individual economic hardship is associated with worse public health outcomes. This is the question that our project intends to investigate– are census tracts with higher levels of mortgage debt or fewer proximate banks also more prone to negative public health outcomes such as higher rates of heart disease or depression? 
+```
 
 #### Literature Review:
 
@@ -31,25 +32,20 @@ This article provides a comprehensive overview of the study on the linkage betwe
 This article from the Center for American Progress makes the case that social, economic, and environmental policy all have a part to play in the determination of health outcomes. Additionally, the author makes the case that data should be used in order to determine which communities are most at risk for negative public health outcomes and to understand the influences of policy changes.
 
 [An analysis of financial institutions in Black-majority communities: Black borrowers and depositors face considerable challenges in accessing banking services \| Brookings](https://www.brookings.edu/articles/an-analysis-of-financial-institutions-in-black-majority-communities-black-borrowers-and-depositors-face-considerable-challenges-in-accessing-banking-services/)
-        
-In this analysis from the Brookings Institute, researchers examined the relationship between race and debt across neighborhoods in America, particularly through the lens of access to banking services. Their findings showed that in majority Black and Hispanic neighborhoods there is a greatly reduced presence of banks as compared to white neighborhoods. These disparities aligned with observed differences in interest rates on business loans and growth of local businesses in majority Black neighborhoods as well, indicating a relationship between neighborhood racial demographics and concentration of banks as indicators for access to financial services.
 
+In this analysis from the Brookings Institute, researchers examined the relationship between race and debt across neighborhoods in America, particularly through the lens of access to banking services. Their findings showed that in majority Black and Hispanic neighborhoods there is a greatly reduced presence of banks as compared to white neighborhoods. These disparities aligned with observed differences in interest rates on business loans and growth of local businesses in majority Black neighborhoods as well, indicating a relationship between neighborhood racial demographics and concentration of banks as indicators for access to financial services.
 
 [Bank Branch Presence and Access to Credit in Low‐ to Moderate‐Income Neighborhoods](https://onlinelibrary.wiley.com/doi/abs/10.1111/j.1538-4616.2010.00343.x)
 
-	In this analysis from the Brookings Institute, researchers examined the relationship between race and debt across neighborhoods in America, particularly through the lens of access to banking services. Their findings showed that in majority Black and Hispanic neighborhoods, there is a greatly reduced presence of banks as compared to white neighborhoods. These disparities aligned with observed differences in interest rates on business loans and growth of local businesses in majority Black neighborhoods as well, indicating a relationship between neighborhood racial demographics and concentration of banks as indicators for access to financial services.
-
+```         
+In this analysis from the Brookings Institute, researchers examined the relationship between race and debt across neighborhoods in America, particularly through the lens of access to banking services. Their findings showed that in majority Black and Hispanic neighborhoods, there is a greatly reduced presence of banks as compared to white neighborhoods. These disparities aligned with observed differences in interest rates on business loans and growth of local businesses in majority Black neighborhoods as well, indicating a relationship between neighborhood racial demographics and concentration of banks as indicators for access to financial services.
+```
 
 This article presents evidence that shows access to credit in low-to-moderate income neighborhoods is correlated with the presence of bank branches. Some suggest that this is due to the presence of a bank indicating information costs, as being closer to a bank provides people access to information about credit and loans. This study reveals that mortgage loan transactions increase in low-to-moderate income neighborhoods when there is a bank branch present.
 
-       
 This literature has informed our analysis by providing context for why low-income populations of color often face more economic hardship and have worse public health outcomes. The following analysis will use data from the CDC, FHFA, and elsewhere to analyze the relationship between mortgage debt and health outcomes in the DMV.
 
-
-This article presents evidence that shows access to credit in low-to-moderate-income neighborhoods is correlated with the presence of bank branches. Some suggest that this is due to the presence of a bank indicating information costs, as being closer to a bank provides people access to information about credit and loans. This study reveals that mortgage loan transactions increase in low-to-moderate-income neighborhoods when there is a bank branch present. 
-
-
-[Loading necessary packages]
+\[Loading necessary packages\]
 
 ```{r message=FALSE, warning=FALSE}
 library(httr)
@@ -85,7 +81,7 @@ library(fpc)
 
 We obtained the census tract info using the TIGER/Line Shapefile for the District of Columbia from the U.S. Census Bureau. We installed this data through the library(tigris) command, and we manually selected the Maryland tract, Virginia tract, and DC tract to get a picture of the whole DMV area.
 
-```{r echo = false, message=FALSE, warning=FALSE}
+```{r echo = FALSE, message=FALSE, warning=FALSE}
 
 #pulling Tigris package tracts data
 
@@ -115,12 +111,9 @@ DMV_tracts<- rbind_tigris(DC_tracts, Virginia_tracts, Maryland_tracts)
 
 ### Health Outcomes Data
 
+The CDC PLACES dataset uses small-area estimation methods to provide a model-based mapping of 36 different chronic disease-related measures throughout the United States. These measures include 13 health outcomes, 9 prevention practices, 4 health risk behaviors, 7 disabilities, and 3 health statuses, used to estimate the rates of various chronic conditions by census tract level. The CDC PLACES data was downloaded from the CDC website and sifted to select data from exclusively DC, Maryland, and Virginia. Please download the CSV file provided, "PLACES.csv", to load the correct dataframe.
 
-The CDC PLACES dataset uses small-area estimation methods to provide model-based mapping of 36 different chronic disease-related measures throughout the United States. These measures include 13 health outcomes, 9 prevention practices, 4 health risk behaviors, 7 disabilities, 3 health statuses, used to estimate the rates of various chronic conditions by census tract level. The CDC PLACES data was downloaded from the CDC website and sifted to select data from exclusively DC, Maryland, and Virginia. Please download the CSV file provided, "PLACES.csv", to load the correct dataframe.
-
-The CDC PLACES dataset uses small-area estimation methods to provide a model-based mapping of 36 different chronic disease-related measures throughout the United States. These measures include 13 health outcomes, 9 prevention practices, 4 health risk behaviors, 7 disabilities, and 3 health statuses, used to estimate the rates of various chronic conditions by census tract level. The CDC PLACES data was downloaded from the CDC website and sifted to select data from exclusively DC, Maryland, and Virginia. Please download the CSV file provided, "PLACES.csv", to load the correct dataframe. 
-
-```{r echo = false, message=FALSE, warning=FALSE}
+```{r echo = FALSE, message=FALSE, warning=FALSE}
 #Read in CSV of CDC data
 Health <- read_csv("PLACES.csv")
 
@@ -169,18 +162,12 @@ Health_map %>%
   )
 
 ```
-<<<<<<< HEAD
 
 This map demonstrates that at least one of the health outcomes we selected are present in each census tract in our dataset. Later in the project, we will dive further into the connection between location and health outcomes, and use economic data to further understand how health outcomes differ in each census tract. There isn't an obvious pattern among the tracts that show a concentration of specific health outcomes by specific area.
-=======
-This map demonstrates that at least one of the health outcomes we selected is present in each census tract in our dataset. Later in the project, we will dive further into the connection between location and health outcomes, and use economic data to further understand how health outcomes differ in each census tract. There isn't an obvious pattern among the tracts that show a concentration of specific health outcomes by specific area.
 
 ### Debt-to-Income Ratio Data
-<<<<<<< HEAD
 
-The debt-to-income ratio dataset comes from the Federal Housing Finance Agency which records data about home purchase loans. This dataset has information on individual loans taken out for single-family homes, along with specification of census tracts. The data also include the debt-to-income ratio of each borrower, which is an indication of how much debt the borrower has taken on in relation to their income. The debt-to-income ratio (or DTI) is generally regarded as a reliable indicator of a borrower's financial health, or ability to pay monthly debt payments. Other useful variables in this dataset that will be used in our analysis are census tract indicators, the percentage of minorities in a given census tract, tract median income, and mortgage amount.
-=======
-The debt-to-income ratio dataset comes from the Federal Housing Finance Agency, which records data about home purchase loans. This dataset has information on individual loans taken out for single-family homes, along with specifications of census tracts. The data also include the debt-to-income ratio of each borrower, which is an indication of how much debt the borrower has taken on in relation to their income. The debt-to-income ratio (or DTI) is generally regarded as a reliable indicator of a borrower’s financial health, or ability to pay monthly debt payments. Other useful variables in this dataset that will be used in our analysis are census tract indicators, the percentage of minorities in a given census tract, tract median income, and mortgage amount. 
+The debt-to-income ratio dataset comes from the Federal Housing Finance Agency, which records data about home purchase loans. This dataset has information on individual loans taken out for single-family homes, along with specifications of census tracts. The data also include the debt-to-income ratio of each borrower, which is an indication of how much debt the borrower has taken on in relation to their income. The debt-to-income ratio (or DTI) is generally regarded as a reliable indicator of a borrower's financial health, or ability to pay monthly debt payments. Other useful variables in this dataset that will be used in our analysis are census tract indicators, the percentage of minorities in a given census tract, tract median income, and mortgage amount.
 
 We chose to download the dataset from 2021, as this will reflect the same year as our CDC health outcomes dataset. To download the correct dataset for our analysis, go to this [link:](https://www.bcbs.com/the-health-of-america/articles/healthy-communities-mean-better-economy) and download the ZIP file for the 2021 Freddie Mac dataset. Alternatively, you can use the txt file we included with our submission titled "debt_to_income.txt"
 
@@ -238,11 +225,8 @@ debt_tract_2 <- st_transform(debt_tract_2, crs = 4326)
 
 st_crs(debt_tract_2)
 ```
-<<<<<<< HEAD
 
 The debt-to-income ratio dataset did not come with column names, so we used the data documentation to manually input the names. Some of the column names were changed to match the tigris shapefiles which will be used in later mergers.
-
-The debt-to-income ratio dataset did not come with column names, so we used the data documentation to manually input the names. Some of the column names were changed to match the Tigris shapefiles, which will be used in later mergers.
 
 ### Exploratory Data Analysis using the debt-to-income ratio dataset
 
@@ -262,8 +246,6 @@ debt_to_income %>%
 ```
 
 Here we can see that most of the loans taken out are for the purposes of refinancing a mortgage, while a smaller number are for initial purchase of homes.
-=======
-Here, we can see that most of the loans taken out are for the purposes of refinancing a mortgage, while a smaller number are for the initial purchase of homes. 
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 debt_to_income %>%
@@ -276,8 +258,6 @@ debt_to_income %>%
 ```
 
 This hexbin plot demonstrates that there is a concentration of loans among the 300,000 dollar amount in 30-40% minority census tracts. There is also a significant concentration of single family home loans in the near-100% minority census tracts, but we can see that the loans trend much lower for minority census tracts, closer to 100,000 dollars.
-=======
-This hexbin plot demonstrates that there is a concentration of loans among the 300,000 dollar amount in 30-40% minority census tracts. There is also a significant concentration of single-family home loans in the near-100% minority census tracts, but we can see that the loans trend much lower for minority census tracts, closer to 100,000 dollars.
 
 ### Banks
 
@@ -327,8 +307,6 @@ banks_locations_2 <- banks_locations %>%
 banks_locations_1 + banks_locations_2
 
 ```
-
-We can see from this map of the locations of the banks in DC in each census tract that the highest concentration of banks is in Ward 2. This is understandable since the city center is located within Ward 2. This map illustrates the low density of banks in Wards 7, 8 and 4 as compared to the rest of DC, which is also confirmed in the bar graph showing the count of banks in each ward. Wards 7 and 8 have the highest concentration of people in poverty in DC, while Ward 4 is mostly a residential region where the population is majority non-white. This map gives a preview of our future analysis that proximity to banks is demonstrative of economic outcomes in areas. Since access to banking is indicative of one's access to resources, this map shows the relationship between resources and economic outcomes, specifically for high-poverty areas like Ward 7 and 8, where there are high concentrations of people in poverty and low access to banks. 
 
 We can see by this map of the locations of the banks in DC in each census tract that the highest concentration of banks is in Ward 2. This is understandable since the city center is located within Ward 2. This map illustrates the low density of banks in Wards 7, 8 and 4 as compared to the rest of DC, which is also confirmed in the bar graph showing the count of banks in each ward. Wards 7 and 8 have the highest concentration of people in poverty in DC, while Ward 4 is mostly a residential region where the population is majority non-white. This map gives a preview of our future analysis that proximity to banks is demonstrative of economic outcomes in areas. Since access to banking is indicative of one's access to resources, this map shows the relationship between resources and economic outcomes, specifically for high-poverty areas like Ward 7 and 8, where there are high concentrations of people in poverty and low access to banks.
 
@@ -409,11 +387,6 @@ Banks_Debt_1600 <- max_banks_econ_2 %>%
 Banks_Debt_400 + Banks_Debt_1600
 
 ```
-
-After first creating a buffer of about 400 meters, roughly a quarter of a mile, around the locations of banks, we then filtered the data to show counts of people within the debt_to_income dataset whose debt-to-income ratio is over 20. We plotted the resulting choropleth and compared it to an identical choropleth where the distance to a bank was buffered to 1600 meters, roughly a mile. Through this process, we visualized the relationship between proximity to a bank and economic outcomes. The analysis indicates that census tracts 53.01, 50.02, and 52.01 had the highest number of people (over 8,000) with a debt-to-income ratio of over 20 within a quarter of a mile from a bank. Census tract 53.01 is the area near Dupont Circle. Census tract 50.02 is located within the Logan Circle/Shaw neighborhood, while 52.01 is the area directly adjacent to it. These census tracts all have a high concentration of banking services, but they also have incredibly expensive housing prices. The fact that these census tracts boasted the highest number of people with high debt-to-income ratios and access to banking services illustrates that single-family homes are expensive in this area, but that these individuals were able to access and take advantage of the financial services in their proximity to take our loans for single-family homes in this coveted area. 
-
-Within 1 mile of a bank, census tract 44.00 had the highest number of people with a debt-to-income ratio over 20, with about 24,684 people. Census tracts 53.01, 52.01, and 55.00 had the next highest numbers. Census tract 44.00 is the area near Howard University, on U Street. Census tract 53.01 is near Dupont Circle. Census tract 55.00 is the area near Foggy Bottom and GWU, while Census tract 52.01 is in Logan Circle. These census tracts are all densely populated and close to the city center as well as universities and restaurants. The fact that there are high concentrations of people with high debt-to-income ratios in these areas that are all within 1 mile of a bank affirms what we found in the previous map with proximity to banks set at a quarter of a mile. Single-family homes are quite expensive and difficult to obtain in these areas, but there is also a wide variety of resources available in these areas. These census tracts are all also majority non-minority, which coincides with literature that points to majority Black neighborhoods having low access to banking and low access to housing loans. 
-
 
 After first creating a buffer of about 400 meters, roughly a quarter of a mile, around the locations of banks, we then filtered the data to show counts of people within the debt_to_income dataset whose debt to income ratio is over 20. We plotted the resulting choropleth and compared it to an identical choropleth where the distance to a bank was buffered to 1600 meters, roughly a mile. Through this process, we visualized the relationship between proximity to a bank and economic outcomes. The analysis indicates that census tracts 53.01, 50.02, and 52.01 had the highest number of people (over 8,000) with a debt to income ratio over 20 within a quarter of a mile from a bank. Census tract 53.01 is the area near Dupont Circle. Census tract 50.02 is located within the Logan Circle/Shaw neighborhood, while 52.01 is the area directly adjacent to it. These census tracts all have a high concentration of banking services, but they also have incredibly expensive housing prices. The fact that these census tracts boasted the highest number of people with high debt to income ratios and access to banking services illustrates that single family homes are expensive in this area, but that these individuals were able to access and take advantage of the financial services in their proximity to take our loans for single-family homes in this coveted area.
 
@@ -514,11 +487,9 @@ p3
 
 ```
 
-From this visualization we can see that the four major health outcomes we chose: diabetes, depression, coronary heart disease, and asthma, are quite evenly spread across the DMV area. While some of the census tracts further from the center of D.C. have fewer health outcomes, there is at least one present in each census tract. The colors for each outcome provide a helpful visualization of the range.
-
 ### Using Leaflet to create an interactive map of debt to income ratios in the DMV
 
-From this visualization, we can see that the four major health outcomes we chose, diabetes, depression, coronary heart disease, and asthma, are quite evenly spread across the DMV area. While some of the census tracts further from the center of D.C. have fewer health outcomes, there is at least one present in each census tract. The colors for each outcome provide a helpful visualization of the range.  
+From this visualization, we can see that the four major health outcomes we chose, diabetes, depression, coronary heart disease, and asthma, are quite evenly spread across the DMV area. While some of the census tracts further from the center of D.C. have fewer health outcomes, there is at least one present in each census tract. The colors for each outcome provide a helpful visualization of the range.
 
 ### Using Leaflet to create an interactive map of debt-to-income ratios in the DMV
 
@@ -551,9 +522,6 @@ leaflet(debt_tract_2) %>%
 ```
 
 This map demonstrates the differences between the debt-to-income ratio for single family home purchases in the DMV area.
-
-This map demonstrates the differences between the debt-to-income ratio for single-family home purchases in the DMV area. 
-
 
 ## Visualizations of health outcomes in the DMV area
 
@@ -634,12 +602,9 @@ combined_plot
 
 ```
 
-
 This side by side comparison shows somewhat of a trend that tracts with lower DTI ratios have a higher percentage of health conditions. This may be because tracts where a majority of people are not able to leverage more debt against their income are worse off in terms of their health. This goes against our initial hypothesis that tracts with higher debt to income ratios would also experience higher rates of health conditions.
 
-This side-by-side comparison shows somewhat of a trend that tracts with lower DTI ratios have a higher percentage of health conditions. This may be because tracts, where a majority of people are not able to leverage more debt against their income, are worse off in terms of their health. This goes against our initial hypothesis that tracts with higher debt-to-income ratios would also experience higher rates of health conditions.
-
-#### Merging Health and Debt-to-Income dataset
+#### Merging Health and Debt-to-Income Dataset
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 
@@ -687,9 +652,6 @@ debt_test <- testing(x = split)
 
 ```
 
-### Machine Learning Model #1: Predicting percentage of minorities in a census tract using the single family loan data
-
-
 ### Machine Learning Model #1: Predicting the percentage of minorities in a census tract using the single-family loan data
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
@@ -731,9 +693,6 @@ lasso_fit %>%
 
 ```
 
-The average RMSE across 10 folds for the best-fit model is around 22. This suggests that the average difference between the percentage of minorities in a census tract predicted by the model and the true percentage is 22 percentage points. 22 percentage points is a significant error. 
-
-
 The average RMSE across 10 folds for the best fit model is around 22. This suggests that the average difference between the percentage of minorities in a census tract predicted by the model and the true percentage is 22 percentage points. 22 percentage points is a significant error.
 
 Taking the results from this prediction using our debt dataset, we decided to try a different type of model. LASSO regression is best for linear relationships, and it makes sense that this model may not capture all of the variation in the percentage of minorities across all census tracts in the DMV.
@@ -742,10 +701,7 @@ For our next machine learning model, we will take what we've learned from the pe
 
 ### Machine Learning Model #2: Predicting rates of depression in a census tract using economic predictors from the debt-to-income dataset
 
-
 We've chosen a random forest model to model the relationship between economic factors and depression because random forest models adapt easily to many predictors, and nonlinear relationships. Below, we test two different random forest models and refine one with hyperparameter tuning to get a model with refined predictions of rates of depression in a census tract.
-
-We've chosen a random forest model to model the relationship between economic factors and depression because random forest models adapt easily to many predictors and nonlinear relationships. Below, we test two different random forest models and refine one with hyperparameter tuning to get a model with refined predictions of rates of depression in a census tract. 
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 
@@ -928,9 +884,6 @@ clust_plot <- final_result %>%
 clust_plot
 ```
 
-This plot shows the variance explained by our principal component analysis clusters. We can see here that the variance increases in our clusters as the debt-to-income ratio increases. Three of our clusters show uniformity in structure across the plot, however Cluster 4 is condensed around a low debt to income ratio and a low percentage of minorities living in a census tract. DTI ratio increases variance, while the percent minority decreases variance. These results indicate that perhaps the variation in debt-to-income ratios is not well explained by the racial demographics of a census tract. This is a bit contradictory to our hypothesis, but this could also be an indicator that there are other economic outcomes that correlate with debt-to-income ratios better. The visual nature of the plot suggests that perhaps kmeans clustering is not the best method for analyzing our data. Perhaps, if we had used a different predictor or clustered our data based on health conditions, we would have found a better relationship between our variables. 
-
-
 This plot shows the variance explained by our principal component analysis clusters. We can see here that the variance increases in our clusters as the debt to income ratio increases. Three of our clusters show uniformity in structure across the plot, however Cluster 4 is condensed around a low debt to income ratio and a low percentage of minorities living in a census tract. DTI ratio increases variance, while percent minority decreases variance. These results indicate that perhaps the variation in debt to income ratios is not well explained by the racial demographics of a census tract. This is a bit contradictory to our hypothesis, but this could also be an indicator that there are other economic outcomes that correlate with debt to income ratios better. The visual nature of the plot suggests that perhaps kmeans clustering is not the best method for analyzing our data. Perhaps, if we had used a different predictor or clustered our data based on health conditions, we would have found a better relationship between our variables.
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
@@ -981,9 +934,6 @@ p5
 
 ```
 
-This scatterplot shows health measures clustered together based upon the PCA variance of Debt-to-income variables.However, the nonsensical nature of these graphics suggests that the cluster analysis that we fitted to these indicators was apt at predicting the relationship between these measures. 
-
-
 This scatterplot attempts to show health measures clustered together based upon the PCA variance of Debt-to-income variables. This plot shows that stroke has the highest variance in relation to select debt to income variables. It also shows that diabetes and asthma make up some of that variance, although not as much. Moreover, after merging parts of the health measures data with the debt to income data, the clustering graphics are unclear in their representations suggesting that the cluster analysis that we fitted to these indicators may not be optimal for this data compared to our machine learning models and geospatial visualizations which did a much better job at presenting and predicting the relationship between these measures.
 
 #### Data Interpretation and Analysis
@@ -994,46 +944,34 @@ Our research aimed to document and analyze the relationships between health outc
 
 ### Interpreting the findings:
 
-
 #### Health Outcomes and Geographic Correlation:
 
 As we observed the mapping of health outcomes across census tracts in the DMV area, we found health issues were pervasive regardless of ward. This finding suggests a widespread impact of these health conditions, irrespective of any geographic distinctions. However, the absence of a clear pattern linking health outcomes to specific areas underscores the complexity of health determinants and indicates that factors beyond geography play a significant role. This lack of clear linkage could lead us to discover that other factors, like economic status, may have a more influential effect on health.
 
-# Health Outcomes and Geographic Correlation:
-As we observed the mapping of health outcomes across census tracts in the DMV area, we found health issues were pervasive regardless of ward. This finding suggests a widespread impact of these health conditions, irrespective of any geographic distinctions. However, the absence of a clear pattern linking health outcomes to specific areas underscores the complexity of health determinants and indicates that factors beyond geography play a significant role. This lack of clear linkage could lead us to discover that other factors, like economic status, may have a more influential effect on health. 
+#### Housing Loan Dynamics:
 
-# Housing Loan Dynamics:
-We were interested in finding out the number of borrowers by loan type in order to provide some insight into borrowing behaviors and financial priorities within the population. In our observation, there was a significant skew towards refinancing loans rather than new home purchases. This disparity could reflect broader economic trends, such as market stability or homeowner equity growth. These results may be indicative of the low housing stock and high average value in the DMV area, thus explaining why homeowners are not selling, not buying, but mostly refinancing and remaining stagnant. 
+We were interested in finding out the number of borrowers by loan type in order to provide some insight into borrowing behaviors and financial priorities within the population. In our observation, there was a significant skew towards refinancing loans rather than new home purchases. This disparity could reflect broader economic trends, such as market stability or homeowner equity growth. These results may be indicative of the low housing stock and high average value in the DMV area, thus explaining why homeowners are not selling, not buying, but mostly refinancing and remaining stagnant.
 
 There is also a notable disparity in loan amounts across minority-dominated tracts. There is also a significant concentration of single-family home loans in the near-100% minority census tracts, yet we found that the loans trend much lower for minority census tracts, around 100,000 USD, as opposed to mostly white neighborhoods trending closer to 300,000 USD. This discovery hints at underlying economic inequalities and raises questions about accessibility to financial services and its implications on housing stability in minority communities. It is possible that, due to several systemic and economic reasons, minority communities have less access to higher loans due to either a lower net worth or higher debt-income ratio, allowing them less leverage and, therefore, less valuable loans. It is also important to consider the process banks use to evaluate the financial status of potential borrowers and determine if there is a bias or unjust practices that could be putting minorities at a disadvantage, even against white individuals of the same economic status and credit risk.
 
-# Bank Distribution and Economic Implications in DC:
+### Bank Distribution and Economic Implications in DC:
+
 Through our analysis, we observed that there is a very high concentration of banks in Ward 2 with a notable lack in Wards 7, 8, and 4. This finding seems to align with economic disparities in these areas and could contribute to the cycle of poverty as areas get poorer, resources to build financial stability dissipate, and the cycle continues. This pattern indicates that access to banking is a key economic resource yet is very unevenly distributed, potentially exacerbating economic inequalities.
 
-# Debt-to-Income (DTI) Ratio Insights:	
-The diverse DTI ratios across tracts and their potential link to health conditions suggest a complex interplay between financial burden and health. This aspect of our research opens avenues for exploring how economic stressors impact public health. Within 1 mile of a bank, census tract 44.00 had the highest number of people with a debt-to-income ratio over 20, with about 24,684 people. Census tracts 53.01, 52.01, and 55.00 had the next highest numbers. Census tract 44.00 is the area near Howard University, on U Street. Census tract 53.01 is near Dupont Circle. Census tract 55.00 is the area near Foggy Bottom and GWU, while Census tract 52.01 is in Logan Circle. These census tracts are all densely populated, relatively high-income, and close to the city center as well as universities and restaurants. Those living here are very likely to be students or wealthier young professionals with a greater ability and liberty to handle paying pay larger loans, or even have assistance in that regard from family. The fact that there are high concentrations of people with high debt-to-income ratios in these areas that are all within 1 mile of a bank affirms what we found in the previous map with proximity to banks set at a quarter of a mile. Single-family homes are quite expensive and difficult to obtain in these areas, but there is also a wide variety of resources available in these areas. These census tracts are all also majority non-minority, which coincides with literature that points to majority Black neighborhoods having low access to banking and low access to housing loans. 
+### Debt-to-Income (DTI) Ratio Insights:
 
-# Geospatial Analysis:
+The diverse DTI ratios across tracts and their potential link to health conditions suggest a complex interplay between financial burden and health. This aspect of our research opens avenues for exploring how economic stressors impact public health. Within 1 mile of a bank, census tract 44.00 had the highest number of people with a debt-to-income ratio over 20, with about 24,684 people. Census tracts 53.01, 52.01, and 55.00 had the next highest numbers. Census tract 44.00 is the area near Howard University, on U Street. Census tract 53.01 is near Dupont Circle. Census tract 55.00 is the area near Foggy Bottom and GWU, while Census tract 52.01 is in Logan Circle. These census tracts are all densely populated, relatively high-income, and close to the city center as well as universities and restaurants. Those living here are very likely to be students or wealthier young professionals with a greater ability and liberty to handle paying pay larger loans, or even have assistance in that regard from family. The fact that there are high concentrations of people with high debt-to-income ratios in these areas that are all within 1 mile of a bank affirms what we found in the previous map with proximity to banks set at a quarter of a mile. Single-family homes are quite expensive and difficult to obtain in these areas, but there is also a wide variety of resources available in these areas. These census tracts are all also majority non-minority, which coincides with literature that points to majority Black neighborhoods having low access to banking and low access to housing loans.
+
+### Geospatial Analysis:
+
 Our geospatial analysis aimed to examine whether there is a correlation between the proximity of banks and the incidence of coronary heart disease (CHD) in various areas. Our expectation was that areas with better access to financial institutions would correlate with lower instances of CHD and better health outcomes overall, under the assumption that economic prosperity, facilitated by bank access, would lead to better health outcomes. However, the analysis revealed an unexpected pattern: areas with a higher concentration of banks also showed a higher number of CHD cases. This contradicts our initial hypothesis and suggests that the presence of banks, as a proxy for economic health, does not directly translate to better physical health outcomes. It raises questions about the directness and nature of the relationship between economic factors and health conditions. Health outcomes, particularly chronic conditions like CHD, are influenced by a multitude of variables including lifestyle choices, environmental factors, genetic predispositions, and more-so It's important to note that the lack of significant results does not invalidate the hypothesis; it merely highlights the complexity of the factors at play. One possible explanation is that this may be because in tracts where a majority of people are unable to leverage more debt against their income (for example, to emergency medical care), they are worse off in terms of their health.
 
-# Machine Learning Analysis:
-We chose a random forest model to model the relationship between economic factors and depression. This is because random forest models adapt easily to many predictors and nonlinear relationships. We wanted to test two different random forest models and refine one with hyperparameter tuning in order to output a model with refined predictions of rates of depression in a census tract.
-We found that this model only explains about 77.6% of the variance in the rates of depression in each census tract. We hypothesize that this is due to a lack of tuning the model as well as our limiting of the number of predictors in such a way that not enough information remained to come to a more accurate conclusion. 
-We will tried a random forest model with all predictors using hyperparameter tuning to find the best number of mtrys for the model, and plotted the result. We found that the best number of mtrys was 32, and we added this parameter to the model. As a result, our model shows great improvement from the previous, explaining 99.99% of the variance. We can now use this model to predict health outcomes on the testing dataset.
-Using a machine learning model that adapts to non-linear relationships has shown us that there is indeed a relationship between economic/racial factors and public health outcomes, such as depression. This success underscores the significant role of economic conditions in public health. The model’s improvement post-tuning highlights the importance of robust analytical approaches in understanding such complex relationships.
-<<<<<<< HEAD
-=======
+### Machine Learning Analysis:
 
-###Limitations and Areas for Future Research:
+We chose a random forest model to model the relationship between economic factors and depression. This is because random forest models adapt easily to many predictors and nonlinear relationships. We wanted to test two different random forest models and refine one with hyperparameter tuning in order to output a model with refined predictions of rates of depression in a census tract. We found that this model only explains about 77.6% of the variance in the rates of depression in each census tract. We hypothesize that this is due to a lack of tuning the model as well as our limiting of the number of predictors in such a way that not enough information remained to come to a more accurate conclusion. We will tried a random forest model with all predictors using hyperparameter tuning to find the best number of mtrys for the model, and plotted the result. We found that the best number of mtrys was 32, and we added this parameter to the model. As a result, our model shows great improvement from the previous, explaining 99.99% of the variance. We can now use this model to predict health outcomes on the testing dataset. Using a machine learning model that adapts to non-linear relationships has shown us that there is indeed a relationship between economic/racial factors and public health outcomes, such as depression. This success underscores the significant role of economic conditions in public health. The model's improvement post-tuning highlights the importance of robust analytical approaches in understanding such complex relationships.
 
-The lack of a clear geographic pattern in health outcomes suggests that our analysis could benefit from incorporating additional variables such as environmental factors or access to healthcare in a future model. The interpretation of loan data is, unfortunately, limited by the absence of deeper contextual information, such as the reasons behind refinancing trends or the impact of local housing policies. The relationship between bank distribution and economic outcomes, while suggestive, requires further investigation to establish causality. The DTI analysis could be improved with more granular data, for example, individual credit histories, or long-term financial trends. Our machine learning models, while effective, may not fully capture the multifaceted nature of the relationship between economics and health. Future models could integrate more diverse datasets and employ more complex algorithms to better understand the irregular, non-linear relationship.
-The earlier finding that areas with more banks have higher CHD instances was the result of various confounding factors. For example, these areas might also be more urbanized, with lifestyle factors that contribute to CHD, such as higher stress levels, more sedentary jobs, or greater availability of unhealthy food options. To further understand the relationship between bank proximity and health outcomes, it may be beneficial to control for variables like these or conduct a multivariate analysis that includes additional economic indicators, such as employment rates, income levels, or access to healthcare services. Furthermore, it might be worth exploring other methods of analysis or different health outcomes that could be more directly related to economic conditions. For instance, mental health issues like stress and anxiety could have a stronger correlation with economic factors than CHD does, though these were not possible given our dataset.
-The effect of time is another factor we found challenging to address. Our analysis is cross-sectional and provides a snapshot in time rather than capturing trends over time is less than ideal. Observing how time affects these changes is critical for understanding the dynamics between economic conditions and health outcomes.
+### Limitations and Areas for Future Research:
+
+The lack of a clear geographic pattern in health outcomes suggests that our analysis could benefit from incorporating additional variables such as environmental factors or access to healthcare in a future model. The interpretation of loan data is, unfortunately, limited by the absence of deeper contextual information, such as the reasons behind refinancing trends or the impact of local housing policies. The relationship between bank distribution and economic outcomes, while suggestive, requires further investigation to establish causality. The DTI analysis could be improved with more granular data, for example, individual credit histories, or long-term financial trends. Our machine learning models, while effective, may not fully capture the multifaceted nature of the relationship between economics and health. Future models could integrate more diverse datasets and employ more complex algorithms to better understand the irregular, non-linear relationship. The earlier finding that areas with more banks have higher CHD instances was the result of various confounding factors. For example, these areas might also be more urbanized, with lifestyle factors that contribute to CHD, such as higher stress levels, more sedentary jobs, or greater availability of unhealthy food options. To further understand the relationship between bank proximity and health outcomes, it may be beneficial to control for variables like these or conduct a multivariate analysis that includes additional economic indicators, such as employment rates, income levels, or access to healthcare services. Furthermore, it might be worth exploring other methods of analysis or different health outcomes that could be more directly related to economic conditions. For instance, mental health issues like stress and anxiety could have a stronger correlation with economic factors than CHD does, though these were not possible given our dataset. The effect of time is another factor we found challenging to address. Our analysis is cross-sectional and provides a snapshot in time rather than capturing trends over time is less than ideal. Observing how time affects these changes is critical for understanding the dynamics between economic conditions and health outcomes.
 
 Ultimately while our analysis produced surprising results, it also provides valuable insights into the complexities of health determinants and opens up new avenues for research. It's a reminder that socioeconomic factors and health outcomes are part of a complex intertwined web that requires nuanced, multifaceted, extremely technical approaches to fully understand and design an effective policy.
-
-
-
-
-
->>>>>>> 458d4e9d185f196f74ed3d3c80605d855eee135e
