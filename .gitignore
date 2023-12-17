@@ -1,5 +1,14 @@
 # Project Files
 *.csv
+FinalProject.Rproj
+FinalProject_files/
+capital_flows.xlsx
+clust_gif.gif
+debt_to_income.txt
+fhlmc_sf2021c_loans.txt
+index02.qmd
+medical_debt.xlsx
+scraps.R
 
 # History files
 .Rhistory
